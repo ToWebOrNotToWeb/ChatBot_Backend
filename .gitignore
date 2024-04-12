@@ -1,0 +1,9 @@
+/node_modules
+.idea
+/dist
+.env
+test.js
+example.ts
+assistant.js
+/waitingList
+tsconfig.json

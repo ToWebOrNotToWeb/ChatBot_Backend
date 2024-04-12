@@ -1,0 +1,28 @@
+{
+  "name": "@backend/custom-chat-bot-for-towebornottoweb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "serve": "node server.js"
+  },
+  "author": "pierre-louis sans",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "chromadb": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "llama": "^2.1.13",
+    "llama-node": "^0.1.6",
+    "llamaindex": "^0.2.3",
+    "mongodb": "6.5",
+    "openai": "^4.29.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30"
+  }
+}
