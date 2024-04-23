@@ -20,7 +20,6 @@ import { json } from 'stream/consumers';
 dotenv.config();
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
-const assistant = process.env.ASSISTANT_ID;
 const uri = process.env.MONGO_DB_URI;
 
 
@@ -103,6 +102,7 @@ function convertToArray(inputString) {
 app.get('/', (req, res) => {
 
     res.set('Content-Type', 'text/html');
+    console.log('Someone is trying to access the server');
     res.send('Welcome !');
 
 });
@@ -111,41 +111,43 @@ app.get('/', (req, res) => {
 
 
 app.post('/register', express.json(), async (req, res) => {
+  console.log('Proceding to register :' + req.body.name)
+  return res.json({'error' : 'We are not accepting new users at the moment. Please try again later.'})
+    // let name = req.body.name;
+    // let email = req.body.email;
+    // let password = req.body.password;
 
-    let name = req.body.name;
-    let email = req.body.email;
-    let password = req.body.password;
+    // const saltRounds = 10;
+    // const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // let token = await generateJwtToken(email);
 
-    let token = await generateJwtToken(email);
+    // let query = { email: email };
+    // let result = await collectionUser.findOne(query);
 
-    let query = { email: email };
-    let result = await collectionUser.findOne(query);
+    // if (result != null) {
 
-    if (result != null) {
+    //   res.status(409).json({ error: 'User already exists' });
+    //   return;
 
-      res.status(409).json({ error: 'User already exists' });
-      return;
+    // } else {
 
-    } else {
+    //   try {
 
-      try {
+    //     await collectionUser.insertOne({ name, email, hashedPassword, token });
+    //     res.json({ 'token': token });
 
-        await collectionUser.insertOne({ name, email, hashedPassword, token });
-        res.json({ 'token': token });
+    //   } catch (error) {
 
-      } catch (error) {
+    //     console.error('Error during user registration:', error);
+    //     res.status(500).json({ status: 'error' });
 
-        console.error('Error during user registration:', error);
-        res.status(500).json({ status: 'error' });
-
-      };
-    };
+    //   };
+    // };
 });
 
 app.post('/login', express.json(), async (req, res) => {
+    console.log('Proceding to login :' + req.body.email)
 
     let email = req.body.email;
     let password = req.body.password;
@@ -175,8 +177,135 @@ app.post('/login', express.json(), async (req, res) => {
     };
 });
 
+app.get('/profile', express.json(), async (req, res) => {
+      //console.log('trying to retreave a profile')
+      let token = req.headers.token;
+      //console.log('location 1')
+      //console.log(token)
+  
+      if (verifyJwtToken(token) === false) {
+        res.json({ error: 'expired token'})
+        return
+      }
+  
+      await collectionUser.findOne({ token: token })
+          .then((user) => {
+  
+              if (user === null) {
+  
+                  res.status(403).json({ error: 'Unauthorized' });
+                  return;
+  
+              };
+  
+              res.json({ name: user.name, email: user.email });
+              return;
+  
+          })
+          .catch((error) => {
+  
+              res.status(500).json({ error: error.message });
+              return;
+  
+          });
+});
 
-/*=========================================CRUD Threads===========================================*/
+app.post('/updateProfile', express.json(), async (req, res) => {
+    let token = req.headers.token;
+    let name = req.body.name;
+    let email = req.body.email;
+    let password = req.body.password;
+
+    if (verifyJwtToken(token) === false) {
+      res.json({ error: 'expired token'})
+      return
+    }
+
+    await collectionUser.findOne({ token: token })
+        .then(async (user) => {
+
+            if (user === null) {
+
+                res.status(403).json({ error: 'Unauthorized' });
+                return;
+
+            };
+
+            try {
+
+              if (name != '') {
+                await collectionUser.updateOne({ token: token }, { $set: { name: name } });
+              }
+
+              if (email != '') {
+                await collectionUser.updateOne({ token: token }, { $set: { email: email } });
+              }
+
+              if (password != '') {
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(password, saltRounds);
+                await collectionUser.updateOne({ token: token }, { $set: { hashedPassword: hashedPassword } });
+              }
+
+              res.json({ status: 'success' });
+              return;
+
+            } catch (error) {
+
+              console.error('Error during user update:', error);
+              res.status(500).json({ error: error.message });
+              return;
+
+            };
+        });
+});
+
+app.post('/deleteProfile', express.json(), async (req, res) => {
+    let token = req.headers.token;
+    let confirm = req.body.confirm;
+
+    if (verifyJwtToken(token) === false) {
+      res.json({ error: 'expired token'})
+      return
+    }
+
+    await collectionUser.findOne({ token: token })
+        .then(async (user) => {
+
+            if (user === null) {
+
+                res.status(403).json({ error: 'Unauthorized' });
+                return;
+
+            };
+
+            try {
+
+              if (confirm === 'SUPPRIMER') {
+
+                await collectionUser.deleteOne({ token: token });
+                res.json({ status: 'success' });
+                return;
+
+              } else {
+
+                res.json({ status: 'error' });
+                return;
+
+              };
+
+            } catch (error) {
+
+              console.error('Error during user deletion:', error);
+              res.status(500).json({ error: error.message });
+              return;
+
+            };
+        });
+});
+
+
+/*=========================================CRUD Discutions===========================================*/
 
 
 app.post('/newThread', express.json(), async (req, res) => {
@@ -372,8 +501,8 @@ app.post('/newMessage', express.json(), async (req, res) => {
               };
   
               try {
-                console.log('cahtId')
-                console.log(chatId)
+                // console.log('cahtId')
+                // console.log(chatId)
                 let formated = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
                 console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
                 console.log(formated)
@@ -382,30 +511,30 @@ app.post('/newMessage', express.json(), async (req, res) => {
 
                 let CC_IMF = await findCountryCodeIMF(message);
                 CC_IMF = CC_IMF.replace(/\./g, '');
-                console.log(CC_IMF);
+                // console.log(CC_IMF);
 
                 if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
                   CC_IMF = convertToArray(CC_IMF);
-                  console.log(CC_IMF);
+                  // console.log(CC_IMF);
 
                   let EI_IMF = await findDataCodeIMF(message);
-                  console.log('!!! IMPORTANT !!!');
-                  console.log(EI_IMF);
+                  // console.log('!!! IMPORTANT !!!');
+                  // console.log(EI_IMF);
 
                   let EI_IMFTest = EI_IMF.toString();
                   EI_IMFTest = EI_IMFTest.replace(/\./g, '');
 
                   if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
 //I want to expand my online e-business to germany. I'm in france
-                    //console.log('Hello theire')
-                    //console.log('General Kenobi')
-                    //console.log('Current bug is here =================')
+                    console.log('Hello theire')
+                    console.log('General Kenobi')
+                    // console.log('Current bug is here =================')
                     // console.log(EI_IMF);
                     // console.log(EI_IMF.response);
                     let values = EI_IMF.response;
                     values = convertToArray(values);
-                    console.log('!!! VALEUR !!!');
-                    console.log(values);
+                    // console.log('!!! VALEUR !!!');
+                    // console.log(values);
 
                     let keys = EI_IMF.response2.response;
                     keys = convertToArray(keys);
@@ -419,10 +548,10 @@ app.post('/newMessage', express.json(), async (req, res) => {
                     // console.log(merged);
                     
                     let data = await getIMFData(CC_IMF, keys);
-                    //console.log('Phase 4')
+                    console.log('Phase 4')
                     //console.log(data);
                     data.forEach(key => {
-                      // console.log(key);
+                      //console.log(key);
                       // use the merged array to change the key to the value in the data object
                       
                       for (let i = 0; i < merged.length; i++) {
@@ -435,14 +564,15 @@ app.post('/newMessage', express.json(), async (req, res) => {
                       }
                     })
                     console.log('Phase 5')
-                    console.log(data);
+                    //console.log(data);
                     let imfNumber = [];
                     data.forEach(element => {
                       imfNumber.push(element);
                     })
                     imfNumber = JSON.stringify(imfNumber);
 
-                    messageFormated = "Include some number in your answer. The following paragraphe containt data that you can use to provide a better answer:" + imfNumber + "The data stop here. The following paragraphe is here for contexte, please take it into account when answering the user input: " + formated + "The context stop here. The user input start here: " + message;
+                    //messageFormated = "Include some number in your answer. The following paragraphe containt data that you can use to provide a better answer:" + imfNumber + "The data stop here, included relevent number in your answer. The following paragraphe is here for contexte, please take it into account when answering the user input: " + formated + "The context stop here. The user input start here: " + message;
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + formated + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
                     console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
                     console.log(messageFormated)
                     let response = await newMessage(messageFormated);

@@ -11,6 +11,7 @@ async function getIMFData(ContryCodes, IndicatorCodes) {
             const url = `${baseUrl}/${indicator}/${country}`;
             // Push the fetch promise into the promises array
             promises.push(fetch(url).then(response => response.json()).then(data => data.values));
+            //console.log('IMF api request is sent');
         });
     });
 
@@ -19,7 +20,8 @@ async function getIMFData(ContryCodes, IndicatorCodes) {
         // Flatten the array of arrays to a single array
         return [].concat(...results);
     });
-
+    //console.log('IMF api request is resolved');
+    //console.table(back);
     return back;
 }
 
