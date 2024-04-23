@@ -38,9 +38,9 @@ const client = new MongoClient(uri, {
 });
 
 
-const collectionUser = client.db("chat_bot").collection("users");
-const collectionChat = client.db("chat_bot").collection("chats"); 
-const collectionMessage = client.db("chat_bot").collection("logs"); 
+const collectionUser = client.db("chatBotDB").collection("users");
+const collectionChat = client.db("chatBotDB").collection("chats"); 
+const collectionMessage = client.db("chatBotDB").collection("logs"); 
 
 async function run() {
   try {
