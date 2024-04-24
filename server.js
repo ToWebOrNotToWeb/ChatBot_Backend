@@ -13,6 +13,8 @@ import { getIMFData } from './api_imf.js';
 import { embeddData, search } from './chroma.js'
 import { generateJwtToken, verifyJwtToken } from './jwt.js';
 import { json } from 'stream/consumers';
+//import { multer } from 'multer';
+//import { GridFsStorage  } from 'multer-gridfs-storage';
 
 
 // ========================================================================================================
@@ -58,6 +60,28 @@ async function run() {
 
 run().catch(console.dir);
 
+
+// ========================================================================================================
+// Manage image upload
+
+/*const storage = new GridFsStorage({
+  uri,
+  file: (req, file) => {
+    //If it is an image, save to photos bucket
+    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+      return {
+        bucketName: "img",
+        filename: `${Date.now()}_${file.originalname}`,
+      }
+    } else {
+      //Otherwise save to default bucket
+      return `${Date.now()}_${file.originalname}`
+    }
+  },
+})*/
+
+// Set multer storage engine to the newly created object
+//const upload = multer({ storage })
 
 // ========================================================================================================
 // Emmbed the data and define the index
@@ -260,6 +284,27 @@ app.post('/updateProfile', express.json(), async (req, res) => {
         });
 });
 
+/*app.post('/updatePicture', upload.single("avatar"), async (req, res) => {
+  console.log('Proceding to update picture ');
+
+  let token = req.headers.token;
+  let file = req.data;
+
+  if (verifyJwtToken(token) === false) {
+    res.json({ error: 'expired token'})
+    return
+  }
+
+  // Respond with the file details
+  res.send({
+    message: "Uploaded",
+    id: file.id,
+    name: file.filename,
+    contentType: file.contentType
+  })
+
+});*/
+
 app.post('/deleteProfile', express.json(), async (req, res) => {
     let token = req.headers.token;
     let confirm = req.body.confirm;
@@ -281,7 +326,7 @@ app.post('/deleteProfile', express.json(), async (req, res) => {
 
             try {
 
-              if (confirm === 'SUPPRIMER') {
+              if (confirm === 'DELETE') {
 
                 await collectionUser.deleteOne({ token: token });
                 res.json({ status: 'success' });
