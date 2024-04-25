@@ -1,4 +1,4 @@
-# Backend & API REST for the Chat Bot
+# Backend & API REST for the ChatBot
 
 Côter serveur du chat bot. Utilise une Mongodb comme base de donner pour les utilisateurs et leur historiques de conversations. Llamaindex est utiliser pour rechercher des infos dans les inputs des utilisateurs et enclencher l'API de l'international monetary fund (IMF) afin d'avoir des chiffres pertinent. ChromaDB et Llamaindex sont utiliser pour l'embedding des datas et les stockers.
 
@@ -9,7 +9,7 @@ Procedure d'installation de tout les éléments necesaire au projet.
 ## Backend
 
 Cloner le repo git =>
-`git clone` 
+`git clone https://github.com/ToWebOrNotToWeb/ChatBot_Backend.git` 
 
 A la racine du projet =>
 `npm install`

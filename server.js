@@ -43,6 +43,7 @@ const client = new MongoClient(uri, {
 const collectionUser = client.db("chatBotDB").collection("users");
 const collectionChat = client.db("chatBotDB").collection("chats"); 
 const collectionMessage = client.db("chatBotDB").collection("logs"); 
+const collectionPicture = client.db("chatBotDB").collection("pictures");
 
 async function run() {
   try {
@@ -60,28 +61,6 @@ async function run() {
 
 run().catch(console.dir);
 
-
-// ========================================================================================================
-// Manage image upload
-
-/*const storage = new GridFsStorage({
-  uri,
-  file: (req, file) => {
-    //If it is an image, save to photos bucket
-    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-      return {
-        bucketName: "img",
-        filename: `${Date.now()}_${file.originalname}`,
-      }
-    } else {
-      //Otherwise save to default bucket
-      return `${Date.now()}_${file.originalname}`
-    }
-  },
-})*/
-
-// Set multer storage engine to the newly created object
-//const upload = multer({ storage })
 
 // ========================================================================================================
 // Emmbed the data and define the index
@@ -284,26 +263,97 @@ app.post('/updateProfile', express.json(), async (req, res) => {
         });
 });
 
-/*app.post('/updatePicture', upload.single("avatar"), async (req, res) => {
+app.post('/updatePicture', express.json(), async (req, res) => {
   console.log('Proceding to update picture ');
 
   let token = req.headers.token;
-  let file = req.data;
+  let imgBase64 = req.body.picture;
+  let extention = req.body.extention;
 
   if (verifyJwtToken(token) === false) {
     res.json({ error: 'expired token'})
     return
   }
 
-  // Respond with the file details
-  res.send({
-    message: "Uploaded",
-    id: file.id,
-    name: file.filename,
-    contentType: file.contentType
-  })
+  await collectionUser.findOne({ token: token })
+      .then(async (user) => {
 
-});*/
+          if (user === null) {
+
+              res.status(403).json({ error: 'Unauthorized' });
+              return;
+
+          };
+
+          try {
+
+            // check if the user already has a picture
+            let pp = await collectionPicture.findOne({ userId : new ObjectId(user._id) });
+
+            if (pp === null) {
+              await collectionPicture.insertOne({ userId : new ObjectId(user._id), imgBase64 : imgBase64, extention : extention});
+              res.json({ status: 'success' });
+              return;
+            } else {
+              await collectionPicture.updateOne({ userId : new ObjectId(user._id) }, { $set: { imgBase64 : imgBase64, extention : extention } });
+              res.json({ status: 'success' });
+              return;
+            }
+            
+
+          } catch (error) {
+
+            console.error('Error during user update:', error);
+            res.status(500).json({ error: error.message });
+            return;
+
+          };
+      });
+
+});
+
+app.get('/getPicture', express.json(), async (req, res) => {
+  console.log('Proceding to get picture ');
+
+  let token = req.headers.token;
+
+  if (verifyJwtToken(token) === false) {
+    res.json({ error: 'expired token'})
+    return
+  }
+
+  await collectionUser.findOne({ token: token })
+      .then(async (user) => {
+
+          if (user === null) {
+
+              res.status(403).json({ error: 'Unauthorized' });
+              return;
+
+          };
+
+          try {
+
+            //console.log('User found :', user);
+            let pp = await collectionPicture.findOne({ userId : new ObjectId(user._id) });
+            if (pp === null) {
+              //console.log('No picture found');
+              res.json({ result: user.name });
+              return;
+            }
+            //console.log('Picture found');
+            res.json({result: pp.imgBase64, extention: pp.extention});
+            return;
+
+          } catch (error) {
+
+            console.error('Error during picture retreaval :', error);
+            res.status(500).json({ error: error.message });
+            return;
+
+          };
+      });
+});
 
 app.post('/deleteProfile', express.json(), async (req, res) => {
     let token = req.headers.token;
@@ -357,10 +407,10 @@ app.post('/newThread', express.json(), async (req, res) => {
 
     let token = req.headers.token;
     let chatName = req.body.chatName;
-    console.log('location 1')
+    //console.log('location 1')
     let isExpired = await verifyJwtToken(token).then((result) => {
-      console.log('result')
-      console.log(result)
+      //console.log('result')
+      //console.log(result)
       return result
     })
     .catch((error) => {
@@ -374,7 +424,7 @@ app.post('/newThread', express.json(), async (req, res) => {
       res.json({ error: 'expired token'})
       return
     }
-    console.log('location 3')
+    //console.log('location 3')
     collectionUser.findOne({ token: token })
         .then(async (user) => {
 
@@ -418,15 +468,15 @@ app.post('/newThread', express.json(), async (req, res) => {
 app.get('/getThreads', express.json(), async (req, res) => {
 
   let token = req.headers.token;
-  console.log('location 1')
+  //console.log('location 1')
   console.log(verifyJwtToken(token))
     if (verifyJwtToken(token) === false) {
-      console.log('location 2')
+      //console.log('location 2')
       console.log('expired token')
       res.json({ error: 'expired token'})
       return
     }
-    console.log('location 3')
+    //console.log('location 3')
 
   await collectionUser.findOne({ token: token })
       .then(async (user) => {
