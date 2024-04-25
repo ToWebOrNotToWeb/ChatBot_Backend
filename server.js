@@ -117,6 +117,15 @@ app.get('/', (req, res) => {
 
 });
 
+/*=========================================JWT Token Verify===========================================*/
+app.get('/verifyToken', express.json(), async (req, res) => {
+  let token = req.headers.token;
+  if (!verifyJwtToken(token)) {
+    res.status(403).json({ error: 'sessions expired' });
+    return;
+  }
+});
+
 /*=========================================CRUD Users===========================================*/
 
 
@@ -131,7 +140,7 @@ app.post('/register', express.json(), async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // generate a JWT token
+    // generate a JWT token valid for one hour
     let token = await generateJwtToken(email);
 
     // make sure the user does not already exist
@@ -174,8 +183,12 @@ app.post('/login', express.json(), async (req, res) => {
         // check the password
         if (await bcrypt.compare(password, result.hashedPassword)) {
 
+            //generate a new token valid for one hours
+            let newToken = await generateJwtToken(email);
+            await collectionUser.updateOne({ email: email }, { $set: { token: newToken } });
+
             //console.log('User logged in successfully');
-            res.json({ 'token': result.token });
+            res.json({ 'token': newToken });
 
         } else {
 
@@ -445,9 +458,6 @@ app.post('/newThread', express.json(), async (req, res) => {
 app.get('/getThreads', express.json(), async (req, res) => {
 
   let token = req.headers.token;
-  //console.log('location 1')
-  
-  //console.log('location 3')
 
   await collectionUser.findOne({ token: token })
       .then(async (user) => {
@@ -535,7 +545,7 @@ app.post('/getMessages', express.json(), async (req, res) => {
           });
 });
 
-// If can it migth be a good idea to refactor or subdivide this function
+// If you can it migth be a good idea to refactor or subdivide this function
 app.post('/newMessage', express.json(), async (req, res) => {
   
       let token = req.headers.token;
