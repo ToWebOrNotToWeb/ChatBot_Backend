@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import { Document, VectorStoreIndex, SimpleDirectoryReader } from "llamaindex";
 
-
+// ========================================================================================================
+// Embedd the  country code and economical indicator for the International Monetary Fund (IMF) and create the indexs
 const dataCCIMF = "IMF_countryCode.json";
 const essayCCIMF = await fs.readFile(dataCCIMF, "utf-8");
 const documentCCIMF = new Document({ text: essayCCIMF});
@@ -12,11 +13,13 @@ const essayDCIMF = await fs.readFile(dataDCIMF, "utf-8");
 const documentDCIMF = new Document({ text: essayDCIMF});
 const indexDCIMF = await VectorStoreIndex.fromDocuments([documentDCIMF]);
 
-
+// ========================================================================================================
+// ?????
 let obj = {};
 obj.self = obj;
 
-
+// ========================================================================================================
+// Remove empty strings from an object and its nested objects recursively (did this for a bug about an invalid input)
 function removeEmptyStrings(obj, seenObjects = new WeakSet()) {
     if (seenObjects.has(obj)) {
         // This object has already been seen, so avoid infinite recursion
@@ -35,6 +38,8 @@ function removeEmptyStrings(obj, seenObjects = new WeakSet()) {
     return obj;
 }
 
+// ========================================================================================================
+// Not currently used
 async function getData(input) {
     let directoryPath = "./data";
     let simpleReader = new SimpleDirectoryReader();
@@ -89,7 +94,8 @@ async function getData(input) {
     return response.response;
 }
 
-
+// ========================================================================================================
+// Not event export ?????
 async function getDataV2(input) {
     let directoryPath = "./data";
     let simpleReader = new SimpleDirectoryReader();
@@ -106,6 +112,8 @@ async function getDataV2(input) {
     inputs = JSON.stringify(inputs);
 }
 
+// ========================================================================================================
+// Find the country code for the International Monetary Fund (IMF)
 async function findCountryCodeIMF (input) {
 
     const queryEngine = indexCCIMF.asQueryEngine(); 
@@ -118,6 +126,8 @@ async function findCountryCodeIMF (input) {
 
 };
 
+// ========================================================================================================
+// Find the economical indicator for the International Monetary Fund (IMF)
 async function findDataCodeIMF (input) {
     console.log('Indicator search is triger')
     

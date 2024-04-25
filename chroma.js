@@ -1,6 +1,7 @@
 import { SimpleDirectoryReader, ChromaVectorStore, storageContextFromDefaults, VectorStoreIndex } from 'llamaindex';
 
-
+// ========================================================================================================
+// Embedd all the data and create the index
 async function embeddData() {
     const collectionName = "dataEmbedded";
     const sourceFile = "./data";
@@ -25,6 +26,8 @@ async function embeddData() {
     }
 };
 
+// ========================================================================================================
+// Search in the index for the input query
 async function search(indexPromise, input) {
     const index = await indexPromise;
 
