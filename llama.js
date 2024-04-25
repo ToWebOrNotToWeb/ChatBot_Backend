@@ -14,6 +14,18 @@ const documentDCIMF = new Document({ text: essayDCIMF});
 const indexDCIMF = await VectorStoreIndex.fromDocuments([documentDCIMF]);
 
 // ========================================================================================================
+// Embedd the  country code and economical indicator for The World Bank (TWB) and create the indexs
+const dataCCTWB = "TWB_countryCode.json";
+const essayCCTWB = await fs.readFile(dataCCTWB, "utf-8");
+const documentCCTWB = new Document({ text: essayCCTWB});
+const indexCCTWB = await VectorStoreIndex.fromDocuments([documentCCTWB]);
+
+const dataDCTWB = "TWB_indicator.json";
+const essayDCTWB = await fs.readFile(dataDCTWB, "utf-8");
+const documentDCTWB = new Document({ text: essayDCTWB});
+const indexDCTWB = await VectorStoreIndex.fromDocuments([documentDCTWB]);
+
+// ========================================================================================================
 // ?????
 let obj = {};
 obj.self = obj;
@@ -160,4 +172,52 @@ async function findDataCodeIMF (input) {
     
 };
 
-export { findCountryCodeIMF, findDataCodeIMF, getData } ;
+// ========================================================================================================
+// Find the country code for The World Bank (TWB)
+async function findCountryCodeTWB (input) {
+
+    const queryEngine = indexCCTWB.asQueryEngine(); 
+    console.log('cl de la function =>' + input)
+    const response = await queryEngine.query({
+        query: "If the following string [ "+ input +" ] talk, state, utter, pronouce or mensions one or more country, find all the country code in the document. Else answer 'no'. Watch out Theire can be multiple country.",
+    });
+
+    return response.response
+
+};
+
+// ========================================================================================================
+// Find the economical indicator for The World Bank (TWB)
+async function findDataCodeTWB (input) {
+    console.log('Indicator search is triger')
+    
+    const queryEngine = indexDCTWB.asQueryEngine(); 
+
+    const response = await queryEngine.query({
+        query: "Analyse the following string [ "+ input +" ]. Find multiple economical indicator that are relevent to the string. If you don't find any, answer 'no'.",
+    });
+    console.log('===============!!IMPORTANT!!===================')
+    console.log(response.response)
+    response.response = response.response.toString();
+    response.response = response.response.replace(/\./g, '');
+    console.log('post modification')
+    console.log(response.response)
+    if (response.response != 'no'.trim() && response.response != 'No'.trim() ) {
+        console.log('if is read')
+        const response2 = await queryEngine.query({
+            query: "Get the data codes for the following labels [ "+ response.response +" ].  Only the data code. Don't include the label.",
+        });
+        
+        console.log('response 1 => ' + response.response)
+        console.log('response 2 => ' + response2)
+        console.log({response: response.response, response2: response2})
+        return {response: response.response, response2: response2}
+    } else {
+        console.log('else is read')
+        return response.response
+    }
+
+    
+}
+
+export { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB, getData } ;

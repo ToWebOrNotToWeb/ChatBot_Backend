@@ -13,7 +13,7 @@ import bcrypt from 'bcrypt'; // encrympte & decrypte user's password
 import { OpenAI } from 'openai'; // ???
 import { newMessage } from './api_openai.js'; // used to send message to the api
 
-import { findCountryCodeIMF, findDataCodeIMF, getData } from './llama.js'; // to get the CC and EI for the IMF api & ? get data ?
+import { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB, getData } from './llama.js'; // to get the CC and EI for the IMF api & ? get data ?
 
 import { getIMFData } from './api_imf.js'; // to get the data from the IMF api
 

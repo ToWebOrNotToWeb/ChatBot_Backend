@@ -24,5 +24,4 @@ async function getIMFData(ContryCodes, IndicatorCodes) {
     return back;
 }
 
-
 export { getIMFData };

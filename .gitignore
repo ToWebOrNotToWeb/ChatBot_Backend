@@ -8,3 +8,7 @@ assistant.js
 /waitingList
 tsconfig.json
 .vercel
+extractorCC.js
+extractorEI.js
+rawTWB_CC.json
+rawTWB_EI.json
