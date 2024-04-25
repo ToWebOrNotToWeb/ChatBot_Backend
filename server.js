@@ -545,12 +545,15 @@ app.post('/getMessages', express.json(), async (req, res) => {
           });
 });
 
-// If you can it migth be a good idea to refactor or subdivide this function
 app.post('/newMessage', express.json(), async (req, res) => {
   
       let token = req.headers.token;
       let message = req.body.message;
       let chatId = req.body.chatId;
+      let status = {
+        "twb": null,
+        "imf": null
+      };
       
       await collectionUser.findOne({ token: token })
           .then(async (user) => {
@@ -563,181 +566,156 @@ app.post('/newMessage', express.json(), async (req, res) => {
               };
   
               try {
-                // console.log('cahtId')
-                // console.log(chatId)
 
                 // We get all the previous message in the chat
-                let formated = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-                // console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
-                // console.log(formated)
-                formated = JSON.stringify(formated.content);
+                let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+                previousMessage = JSON.stringify(previousMessage.content);
+                let imfNumber = [];
+                let twbNumber = [];
                 let messageFormated = '';
 
-                // We try to see if the user input talk about any country, if so we get the country code
+                // Check for the IMF api
                 let CC_IMF = await findCountryCodeIMF(message);
                 CC_IMF = CC_IMF.replace(/\./g, '');
-                // console.log(CC_IMF);
 
                 if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
-                  // ========================================================================================================
-                  // We find country in the user input, and success fully retreave theire country code.
-                  CC_IMF = convertToArray(CC_IMF);
-                  // console.log(CC_IMF);
 
-                  // We try to see if the user input talk about any || if theire is relevant economical indicator, if so we get the data code
+                  CC_IMF = convertToArray(CC_IMF);
+
                   let EI_IMF = await findDataCodeIMF(message);
-                  // console.log('!!! IMPORTANT !!!');
-                  // console.log(EI_IMF);
 
                   let EI_IMFTest = EI_IMF.toString();
                   EI_IMFTest = EI_IMFTest.replace(/\./g, '');
 
                   if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
-                    // ========================================================================================================
-                    // We find economical indicator in the user input, and success fully retreave theire code.
+                    let valuesIMF = EI_IMF.response;
+                    valuesIMF = convertToArray(valuesIMF);
 
-                    console.log('Hello theire')
-                    console.log('General Kenobi')
-                    // console.log('Current bug is here =================')
-                    // console.log(EI_IMF);
-                    // console.log(EI_IMF.response);
-                    let values = EI_IMF.response;
-                    values = convertToArray(values);
-                    // console.log('!!! VALEUR !!!');
-                    // console.log(values);
-
-                    let keys = EI_IMF.response2.response;
-                    keys = convertToArray(keys);
-                    // console.log('!!! KEY !!!');
-                    // console.log(keys);
+                    let keysIMF = EI_IMF.response2.response;
+                    keysIMF = convertToArray(keysIMF);
 
                     // We merge the key and the value to have a key value pair
-                    let merged = keys.map((key, index) => {
-                      return { [key]: values[index]};
+                    let mergedIMF = keysIMF.map((key, index) => {
+                      return { [key]: valuesIMF[index]};
                     });
-                    // console.log('!!! MERGED !!!');
-                    // console.log(merged);
-                    
+
                     // We get the data from the IMF api based on the country code and the economical indicator find earlier
-                    let data = await getIMFData(CC_IMF, keys);
-                    //console.log('Phase 4')
-                    //console.log(data);
-                    data.forEach(key => {
-                      //console.log(key);
+                    let dataIMF = await getIMFData(CC_IMF, keysIMF);
+                    dataIMF.forEach(key => {
                       // use the merged array to change the key to the value in the data object
                       
-                      for (let i = 0; i < merged.length; i++) {
-                        let keyName = Object.keys(merged[i])[0];
-                        let value = merged[i][keyName];
+                      for (let i = 0; i < mergedIMF.length; i++) {
+                        let keyName = Object.keys(mergedIMF[i])[0];
+                        let value = mergedIMF[i][keyName];
                         if (key[keyName] != undefined) {
                           key[value] = key[keyName];
                           delete key[keyName];
                         }
                       }
                     })
-                    console.log('Phase 5')
-                    //console.log(data);
-
                     // we format the data from the imf to be send to the openai api
-                    let imfNumber = [];
-                    data.forEach(element => {
+                    dataIMF.forEach(element => {
                       imfNumber.push(element);
                     })
                     imfNumber = JSON.stringify(imfNumber);
-
-                    // we concatenate the context, the IMF data and the user input
-                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + formated + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
-                    //console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
-                    //console.log(messageFormated)
-
-                    // we send it to the openai api
-                    let response = await newMessage(messageFormated);
-                    let messageUser = { role: 'user', content: message};
-                    let messageBot = response.choices[0].message;
-                    
-                    let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                    // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
-                    if (discution === null) {
-                      console.log('No message found');
-                      await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                      res.json({ status: 'success' });
-                      return;
-                    } else {
-                      // Insert the user input and the bot response in the chat
-                      if (!Array.isArray(discution.content)) {
-                        discution.content = [discution.content]; 
-                      }
-                      discution.content.push(messageUser);
-                      discution.content.push(messageBot);
-                      await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                      res.json({ id: chatId });
-                      return;
-                    } 
-
-                  } else {
-                    // ========================================================================================================
-                    // We find country in the user input, but we don't find any relevant economical indicator. We don't intract with IMF Api.
-                    messageFormated = "The following paragraphe is here for contexte, please take it into account when answering the user input" + formated + "The context stop here. The user input start here: " + message;
-                    let response = await newMessage(messageFormated);
-                    let messageUser = { role: 'user', content: message};
-                    let messageBot = response.choices[0].message;
-                    
-                    let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                    // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
-                    if (discution === null) {
-                      console.log('No message found');
-                      await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                      res.json({ status: 'success' });
-                      return;
-                    } else {
-                      // Insert the user input and the bot response in the chat 
-                      if (!Array.isArray(discution.content)) {
-                        discution.content = [discution.content]; 
-                      }
-                      discution.content.push(messageUser);
-                      discution.content.push(messageBot);
-                      await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                      res.json({ id: chatId });
-                      return;
-                    } 
+                    status.imf = true;
                   }
-
-                } else {
-
-                  // ========================================================================================================
-                  // The user intput don't talk about any country, we don't intract with IMF Api.
-
-                  // we concatenate the context and the user input
-                  messageFormated = "The following paragraphe is here for contexte, please take it into account when answering the user input" + formated + "The context stop here. The user input start here: " + message;
-                  // we send it to the openai api
-                  let response = await newMessage(messageFormated);
-                  let messageUser = { role: 'user', content: message};
-                  let messageBot = response.choices[0].message;
-                  
-                  let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                  // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
-                  if (discution === null) {
-                    console.log('No message found');
-                    await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                    res.json({ status: 'success' });
-                    return;
-                  } else {
-                    // Insert the user input and the bot response in the chat
-                    if (!Array.isArray(discution.content)) {
-                      discution.content = [discution.content]; 
-                    }
-                    discution.content.push(messageUser);
-                    discution.content.push(messageBot);
-                    await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                    res.json({ id: chatId });
-                    return;
-                  } 
-
                 }
+
+                // Check for the TWB api
+                let CC_TWB = await findCountryCodeTWB(message);
+                CC_TWB = CC_TWB.replace(/\./g, '');
+
+                if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
+                    
+                    CC_TWB = convertToArray(CC_TWB);
+  
+                    let EI_TWB = await findDataCodeTWB(message);
+  
+                    let EI_TWBTest = EI_TWB.toString();
+                    EI_TWBTest = EI_TWBTest.replace(/\./g, '');
+  
+                    if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
+                      let valuesTWB = EI_TWB.response;
+                      valuesTWB = convertToArray(valuesTWB);
+  
+                      let keysTWB = EI_TWB.response2.response;
+                      keysTWB = convertToArray(keysTWB);
+  
+                      // We merge the key and the value to have a key value pair
+                      let mergedTWB = keysTWB.map((key, index) => {
+                        return { [key]: valuesTWB[index]};
+                      });
+  
+                      // We get the data from the TWB api based on the country code and the economical indicator find earlier
+                      let dataTWB = await getData(CC_TWB, keysTWB);
+                      dataTWB.forEach(key => {
+                        // use the merged array to change the key to the value in the data object
+                        
+                        for (let i = 0; i < mergedTWB.length; i++) {
+                          let keyName = Object.keys(mergedTWB[i])[0];
+                          let value = mergedTWB[i][keyName];
+                          if (key[keyName] != undefined) {
+                            key[value] = key[keyName];
+                            delete key[keyName];
+                          }
+                        }
+                      })
+                      // we format the data from the twb to be send to the openai api
+                      dataTWB.forEach(element => {
+                        twbNumber.push(element);
+                      })
+                      twbNumber = JSON.stringify(twbNumber);
+                      status.twb = true;
+                    }
+                  }
                 
+                console.log('Status:', status);
+                switch (true) { 
+                  case status.imf === true && status.twb === true:
+                    console.log('IMF and TWB APIs are triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+                    
+                  case status.twb === true:
+                    console.log('TWB API is triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+
+                  case status.imf === true:
+                    console.log('IMF API is triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+
+                  default:
+                    console.log('No API is triggered');
+                    messageFormated = "Consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ".";
+                }
+
+                // we send it to the openai api
+                let response = await newMessage(messageFormated);
+                let messageUser = { role: 'user', content: message};
+                let messageBot = response.choices[0].message;
+                
+                let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+
+                // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
+                if (discution === null) {
+                  console.log('No message found');
+                  await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
+                  res.json({ status: 'success' });
+                  return;
+                } else {
+                  // Insert the user input and the bot response in the chat
+                  if (!Array.isArray(discution.content)) {
+                    discution.content = [discution.content]; 
+                  }
+                  discution.content.push(messageUser);
+                  discution.content.push(messageBot);
+                  await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
+                  res.json({ id: chatId });
+                  return;
+                } 
                  
               } catch (error) {
                 console.error('Error during message creation:', error);
@@ -750,7 +728,6 @@ app.post('/newMessage', express.json(), async (req, res) => {
 
 // ========================================================================================================
 // start the server
-
 app.listen(port, () => {
     console.log('Server app listening on port ' + port);
 });

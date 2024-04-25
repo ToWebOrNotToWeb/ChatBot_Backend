@@ -3,25 +3,25 @@ import { Document, VectorStoreIndex, SimpleDirectoryReader } from "llamaindex";
 
 // ========================================================================================================
 // Embedd the  country code and economical indicator for the International Monetary Fund (IMF) and create the indexs
-const dataCCIMF = "IMF_countryCode.json";
+const dataCCIMF = "apiData/IMF_countryCode.json";
 const essayCCIMF = await fs.readFile(dataCCIMF, "utf-8");
 const documentCCIMF = new Document({ text: essayCCIMF});
 const indexCCIMF = await VectorStoreIndex.fromDocuments([documentCCIMF]);
 
-const dataDCIMF = "IMF_indicator.json";
+const dataDCIMF = "apiData/IMF_indicator.json";
 const essayDCIMF = await fs.readFile(dataDCIMF, "utf-8");
 const documentDCIMF = new Document({ text: essayDCIMF});
 const indexDCIMF = await VectorStoreIndex.fromDocuments([documentDCIMF]);
 
 // ========================================================================================================
 // Embedd the  country code and economical indicator for The World Bank (TWB) and create the indexs
-const dataCCTWB = "TWB_countryCode.json";
+const dataCCTWB = "apiData/TWB_countryCode.json";
 const essayCCTWB = await fs.readFile(dataCCTWB, "utf-8");
 const documentCCTWB = new Document({ text: essayCCTWB});
 const indexCCTWB = await VectorStoreIndex.fromDocuments([documentCCTWB]);
 
-const dataDCTWB = "TWB_indicator.json";
-const essayDCTWB = await fs.readFile(dataDCTWB, "utf-8");
+const dataDCTWB = "apiData/IndicatorTWB";
+const essayDCTWB = await fs.readdir(dataDCTWB, "utf-8");
 const documentDCTWB = new Document({ text: essayDCTWB});
 const indexDCTWB = await VectorStoreIndex.fromDocuments([documentDCTWB]);
 

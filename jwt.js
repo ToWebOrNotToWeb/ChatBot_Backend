@@ -10,7 +10,6 @@ async function generateJwtToken(payload) {
 };
 
 function verifyJwtToken(token) {
-    //console.log('start verify jwt')
     try {
 
         const secret = process.env.JWT_SECRET;
