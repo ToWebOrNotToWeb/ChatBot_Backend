@@ -1,5 +1,4 @@
 const baseUrl = 'https://www.imf.org/external/datamapper/api/v1';
-const time = 'periods=2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028';
 
 async function getIMFData(ContryCodes, IndicatorCodes) {
     console.log('IMF api request is triggered');
@@ -24,6 +23,5 @@ async function getIMFData(ContryCodes, IndicatorCodes) {
     //console.table(back);
     return back;
 }
-
 
 export { getIMFData };

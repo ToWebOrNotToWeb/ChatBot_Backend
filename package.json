@@ -1,11 +1,11 @@
 {
   "name": "@backend/custom-chat-bot-for-towebornottoweb",
   "version": "1.0.0",
-  "description": "",
+  "description": "Serveur side for custom chat bot for towebornottoweb",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "build": "node server.js"
+    "srv": "node server.js"
   },
   "author": "pierre-louis sans",
   "license": "ISC",
@@ -15,6 +15,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "llama": "^2.1.13",
     "llama-node": "^0.1.6",

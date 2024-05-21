@@ -1,18 +1,27 @@
+/* Good luck to any dev passing by, when i wrote it only i and god now how it work, now only him*/
+
 // ========================================================================================================
 // Import the required modules
-import * as dotenv from 'dotenv';
-import { OpenAI } from 'openai';
-import express from 'express';
-import cors from 'cors';
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import bcrypt from 'bcrypt';
-import { newMessage } from './api_openai.js';
-import { findCountryCodeIMF, findDataCodeIMF, getData } from './llama.js';
-import { ObjectId } from 'mongodb';
-import { getIMFData } from './api_imf.js';
-import { embeddData, search } from './chroma.js'
-import { generateJwtToken, verifyJwtToken } from './jwt.js';
-import { json } from 'stream/consumers';
+import * as dotenv from 'dotenv'; // load the environement variable
+import express from 'express'; // express for the server
+import cors from 'cors'; // CORS policy
+
+import { MongoClient, ServerApiVersion } from 'mongodb'; // the database
+import { ObjectId } from 'mongodb'; // used to convert the id to a mongo object id
+
+import { generateJwtToken, verifyJwtToken } from './jwt.js'; // to generate a JWT token and check the validity
+import bcrypt from 'bcrypt'; // encrympte & decrypte user's password
+
+import { OpenAI } from 'openai'; // ???
+import { newMessage } from './api_openai.js'; // used to send message to the api
+
+import { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB, getData } from './llama.js'; // to get the CC and EI for the IMF api & ? get data ?
+
+import { getIMFData } from './api_imf.js'; // to get the data from the IMF api
+
+import { embeddData, search } from './chroma.js' // to embedd the data and search in the index
+
+import { json } from 'stream/consumers'; // ???? 
 //import { multer } from 'multer';
 //import { GridFsStorage  } from 'multer-gridfs-storage';
 
@@ -77,7 +86,7 @@ app.use(cors());
 
 // ========================================================================================================
 // Polyalent function may or may not be usefull
-function generateToken() {
+function createToken() {
     return Math.random().toString(36).substring(2, 15);
 };
 
@@ -105,65 +114,84 @@ function convertToArray(inputString) {
 app.get('/', (req, res) => {
 
     res.set('Content-Type', 'text/html');
-    console.log('Someone is trying to access the server');
+    console.log('The serveur is running');
+    res.status(200);
     res.send('Welcome !');
 
+});
+
+/*=========================================JWT Token Verify===========================================*/
+app.get('/verifyToken', express.json(), async (req, res) => {
+  let token = req.headers.token;
+  if (!verifyJwtToken(token)) {
+    res.status(403).json({ error: 'sessions expired' });
+    return;
+  }
 });
 
 /*=========================================CRUD Users===========================================*/
 
 
 app.post('/register', express.json(), async (req, res) => {
-  console.log('Proceding to register :' + req.body.name)
+  //console.log('Proceding to register :' + req.body.name)
   return res.json({'error' : 'We are not accepting new users at the moment. Please try again later.'})
-    // let name = req.body.name;
-    // let email = req.body.email;
-    // let password = req.body.password;
+    let name = req.body.name;
+    let email = req.body.email;
+    let password = req.body.password;
 
-    // const saltRounds = 10;
-    // const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // let token = await generateJwtToken(email);
+    // generate a JWT token valid for one hour
+    let token = await generateJwtToken(email);
 
-    // let query = { email: email };
-    // let result = await collectionUser.findOne(query);
+    // make sure the user does not already exist
+    let query = { email: email };
+    let result = await collectionUser.findOne(query);
 
-    // if (result != null) {
+    if (result != null) {
 
-    //   res.status(409).json({ error: 'User already exists' });
-    //   return;
+      res.status(409).json({ error: 'User already exists' });
+      return;
 
-    // } else {
+    } else {
 
-    //   try {
+      try {
 
-    //     await collectionUser.insertOne({ name, email, hashedPassword, token });
-    //     res.json({ 'token': token });
+        await collectionUser.insertOne({ name, email, hashedPassword, token });
+        res.json({ 'token': token });
 
-    //   } catch (error) {
+      } catch (error) {
 
-    //     console.error('Error during user registration:', error);
-    //     res.status(500).json({ status: 'error' });
+        console.error('Error during user registration:', error);
+        res.status(500).json({ status: 'error' });
 
-    //   };
-    // };
+      };
+    };
 });
 
 app.post('/login', express.json(), async (req, res) => {
-    console.log('Proceding to login :' + req.body.email)
+    //console.log('Proceding to login :' + req.body.email)
 
     let email = req.body.email;
     let password = req.body.password;
 
+    // make sure the user exists
     let query = { email: email};
     let result = await collectionUser.findOne(query);
 
     if (result != null) {
 
+        // check the password
         if (await bcrypt.compare(password, result.hashedPassword)) {
 
+            //generate a new token valid for one hours
+            let newToken = await generateJwtToken(email);
+            await collectionUser.updateOne({ email: email }, { $set: { token: newToken } });
+
             //console.log('User logged in successfully');
-            res.json({ 'token': result.token });
+            res.json({ 'token': newToken });
 
         } else {
 
@@ -185,11 +213,6 @@ app.get('/profile', express.json(), async (req, res) => {
       let token = req.headers.token;
       //console.log('location 1')
       //console.log(token)
-  
-      if (verifyJwtToken(token) === false) {
-        res.json({ error: 'expired token'})
-        return
-      }
   
       await collectionUser.findOne({ token: token })
           .then((user) => {
@@ -219,11 +242,6 @@ app.post('/updateProfile', express.json(), async (req, res) => {
     let email = req.body.email;
     let password = req.body.password;
 
-    if (verifyJwtToken(token) === false) {
-      res.json({ error: 'expired token'})
-      return
-    }
-
     await collectionUser.findOne({ token: token })
         .then(async (user) => {
 
@@ -235,7 +253,7 @@ app.post('/updateProfile', express.json(), async (req, res) => {
             };
 
             try {
-
+              // update the user's profile information if provided
               if (name != '') {
                 await collectionUser.updateOne({ token: token }, { $set: { name: name } });
               }
@@ -264,16 +282,11 @@ app.post('/updateProfile', express.json(), async (req, res) => {
 });
 
 app.post('/updatePicture', express.json(), async (req, res) => {
-  console.log('Proceding to update picture ');
+  //console.log('Proceding to update picture ');
 
   let token = req.headers.token;
   let imgBase64 = req.body.picture;
   let extention = req.body.extention;
-
-  if (verifyJwtToken(token) === false) {
-    res.json({ error: 'expired token'})
-    return
-  }
 
   await collectionUser.findOne({ token: token })
       .then(async (user) => {
@@ -291,10 +304,12 @@ app.post('/updatePicture', express.json(), async (req, res) => {
             let pp = await collectionPicture.findOne({ userId : new ObjectId(user._id) });
 
             if (pp === null) {
+              // he don't have one so we create one
               await collectionPicture.insertOne({ userId : new ObjectId(user._id), imgBase64 : imgBase64, extention : extention});
               res.json({ status: 'success' });
               return;
             } else {
+              // he already have one so we update it
               await collectionPicture.updateOne({ userId : new ObjectId(user._id) }, { $set: { imgBase64 : imgBase64, extention : extention } });
               res.json({ status: 'success' });
               return;
@@ -313,14 +328,10 @@ app.post('/updatePicture', express.json(), async (req, res) => {
 });
 
 app.get('/getPicture', express.json(), async (req, res) => {
-  console.log('Proceding to get picture ');
+  //console.log('Proceding to get picture ');
 
   let token = req.headers.token;
 
-  if (verifyJwtToken(token) === false) {
-    res.json({ error: 'expired token'})
-    return
-  }
 
   await collectionUser.findOne({ token: token })
       .then(async (user) => {
@@ -338,10 +349,12 @@ app.get('/getPicture', express.json(), async (req, res) => {
             let pp = await collectionPicture.findOne({ userId : new ObjectId(user._id) });
             if (pp === null) {
               //console.log('No picture found');
+              // if the user don't have any profile picture we return the name of the user, in the front we will display the first letter in capital  
               res.json({ result: user.name });
               return;
             }
             //console.log('Picture found');
+            // we return the picture and the extention
             res.json({result: pp.imgBase64, extention: pp.extention});
             return;
 
@@ -359,11 +372,6 @@ app.post('/deleteProfile', express.json(), async (req, res) => {
     let token = req.headers.token;
     let confirm = req.body.confirm;
 
-    if (verifyJwtToken(token) === false) {
-      res.json({ error: 'expired token'})
-      return
-    }
-
     await collectionUser.findOne({ token: token })
         .then(async (user) => {
 
@@ -375,7 +383,7 @@ app.post('/deleteProfile', express.json(), async (req, res) => {
             };
 
             try {
-
+              // check that the user confirmed
               if (confirm === 'DELETE') {
 
                 await collectionUser.deleteOne({ token: token });
@@ -408,22 +416,7 @@ app.post('/newThread', express.json(), async (req, res) => {
     let token = req.headers.token;
     let chatName = req.body.chatName;
     //console.log('location 1')
-    let isExpired = await verifyJwtToken(token).then((result) => {
-      //console.log('result')
-      //console.log(result)
-      return result
-    })
-    .catch((error) => {
-      console.error('Error verifying JWT token:', error);
-      return false;
-    });
-    console.log(isExpired)
-    if ( isExpired == false) {
-      console.log('location 2')
-      console.log('expired token')
-      res.json({ error: 'expired token'})
-      return
-    }
+    
     //console.log('location 3')
     collectionUser.findOne({ token: token })
         .then(async (user) => {
@@ -437,14 +430,14 @@ app.post('/newThread', express.json(), async (req, res) => {
 
             let userId = user._id;
             try {
-
+              // create a new thread in the chat collection
               await collectionChat.insertOne({ userId, chatName });
               let chat = await collectionChat.findOne({ userId, chatName });
               let message = {
                 role: 'system',
                 content: 'please provide help to the user'
               };
-
+              // create a new message in the message collection
               collectionMessage.insertOne({ chatsId: chat._id, content: message })
 
               res.json({ chatName: chatName });
@@ -468,15 +461,6 @@ app.post('/newThread', express.json(), async (req, res) => {
 app.get('/getThreads', express.json(), async (req, res) => {
 
   let token = req.headers.token;
-  //console.log('location 1')
-  console.log(verifyJwtToken(token))
-    if (verifyJwtToken(token) === false) {
-      //console.log('location 2')
-      console.log('expired token')
-      res.json({ error: 'expired token'})
-      return
-    }
-    //console.log('location 3')
 
   await collectionUser.findOne({ token: token })
       .then(async (user) => {
@@ -508,11 +492,6 @@ app.post('/deleteThread', express.json(), async (req, res) => {
 
     let token = req.headers.token;
     let _id = req.body.chatId;
-
-    if (verifyJwtToken(token) === false) {
-      res.json({ error: 'expired token'})
-      return
-    }
 
     await collectionUser.findOne({ token: token })
         .then(async (user) => {
@@ -547,11 +526,6 @@ app.post('/getMessages', express.json(), async (req, res) => {
       let token = req.headers.token;
       let chatId = req.body.chatId;
 
-      if (verifyJwtToken(token) === false) {
-        res.json({ error: 'expired token'})
-        return
-      }
-
       await collectionUser.findOne({ token: token })
           .then(async (user) => {
   
@@ -579,11 +553,10 @@ app.post('/newMessage', express.json(), async (req, res) => {
       let token = req.headers.token;
       let message = req.body.message;
       let chatId = req.body.chatId;
-
-      if (verifyJwtToken(token) === false) {
-        res.json({ error: 'expired token'})
-        return
-      }
+      let status = {
+        "twb": false,
+        "imf": false
+      };
       
       await collectionUser.findOne({ token: token })
           .then(async (user) => {
@@ -596,156 +569,170 @@ app.post('/newMessage', express.json(), async (req, res) => {
               };
   
               try {
-                // console.log('cahtId')
-                // console.log(chatId)
-                let formated = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-                console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
-                console.log(formated)
-                formated = JSON.stringify(formated.content);
+
+                // We get all the previous message in the chat
+                let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+                //console.log('Previous message:', previousMessage);
+                previousMessage = JSON.stringify(previousMessage.content);
+                let imfNumber = [];
+                let twbNumber = [];
                 let messageFormated = '';
 
+                // get intel from private data
+                // let privateData = await search(indexData, message);
+
+                // Check for the IMF api
                 let CC_IMF = await findCountryCodeIMF(message);
                 CC_IMF = CC_IMF.replace(/\./g, '');
-                // console.log(CC_IMF);
 
                 if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
+                  console.log('step one')
                   CC_IMF = convertToArray(CC_IMF);
-                  // console.log(CC_IMF);
 
                   let EI_IMF = await findDataCodeIMF(message);
-                  // console.log('!!! IMPORTANT !!!');
-                  // console.log(EI_IMF);
 
                   let EI_IMFTest = EI_IMF.toString();
                   EI_IMFTest = EI_IMFTest.replace(/\./g, '');
+                  console.log('EI_IMFTest:', EI_IMFTest);
 
                   if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
-//I want to expand my online e-business to germany. I'm in france
-                    console.log('Hello theire')
-                    console.log('General Kenobi')
-                    // console.log('Current bug is here =================')
-                    // console.log(EI_IMF);
-                    // console.log(EI_IMF.response);
-                    let values = EI_IMF.response;
-                    values = convertToArray(values);
-                    // console.log('!!! VALEUR !!!');
-                    // console.log(values);
+                    console.log('step two')
+                    console.log('IMF API is triggered');
 
-                    let keys = EI_IMF.response2.response;
-                    keys = convertToArray(keys);
-                    // console.log('!!! KEY !!!');
-                    // console.log(keys);
+                    let valuesIMF = EI_IMF.response;
+                    valuesIMF = convertToArray(valuesIMF);
 
-                    let merged = keys.map((key, index) => {
-                      return { [key]: values[index]};
+                    let keysIMF = EI_IMF.response2.response;
+                    keysIMF = convertToArray(keysIMF);
+
+                    // We merge the key and the value to have a key value pair
+                    let mergedIMF = keysIMF.map((key, index) => {
+                      return { [key]: valuesIMF[index]};
                     });
-                    // console.log('!!! MERGED !!!');
-                    // console.log(merged);
-                    
-                    let data = await getIMFData(CC_IMF, keys);
-                    console.log('Phase 4')
-                    //console.log(data);
-                    data.forEach(key => {
-                      //console.log(key);
+
+                    // We get the data from the IMF api based on the country code and the economical indicator find earlier
+                    let dataIMF = await getIMFData(CC_IMF, keysIMF);
+                    dataIMF.forEach(key => {
                       // use the merged array to change the key to the value in the data object
                       
-                      for (let i = 0; i < merged.length; i++) {
-                        let keyName = Object.keys(merged[i])[0];
-                        let value = merged[i][keyName];
+                      for (let i = 0; i < mergedIMF.length; i++) {
+                        let keyName = Object.keys(mergedIMF[i])[0];
+                        let value = mergedIMF[i][keyName];
                         if (key[keyName] != undefined) {
                           key[value] = key[keyName];
                           delete key[keyName];
                         }
                       }
                     })
-                    console.log('Phase 5')
-                    //console.log(data);
-                    let imfNumber = [];
-                    data.forEach(element => {
+                    // we format the data from the imf to be send to the openai api
+                    dataIMF.forEach(element => {
                       imfNumber.push(element);
                     })
                     imfNumber = JSON.stringify(imfNumber);
-
-                    //messageFormated = "Include some number in your answer. The following paragraphe containt data that you can use to provide a better answer:" + imfNumber + "The data stop here, included relevent number in your answer. The following paragraphe is here for contexte, please take it into account when answering the user input: " + formated + "The context stop here. The user input start here: " + message;
-                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + formated + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
-                    console.log('+++++++++++++++++FORMATED MESSAGE+++++++++++++++++')
-                    console.log(messageFormated)
-                    let response = await newMessage(messageFormated);
-                    let messageUser = { role: 'user', content: message};
-                    let messageBot = response.choices[0].message;
-                    
-                    let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                    if (discution === null) {
-                      console.log('No message found');
-                      await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                      res.json({ status: 'success' });
-                      return;
-                    } else {
-                      
-                      if (!Array.isArray(discution.content)) {
-                        discution.content = [discution.content]; 
-                      }
-                      discution.content.push(messageUser);
-                      discution.content.push(messageBot);
-                      await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                      res.json({ id: chatId });
-                      return;
-                    } 
-
-                  } else {
-                    messageFormated = "The following paragraphe is here for contexte, please take it into account when answering the user input" + formated + "The context stop here. The user input start here: " + message;
-                    let response = await newMessage(messageFormated);
-                    let messageUser = { role: 'user', content: message};
-                    let messageBot = response.choices[0].message;
-                    
-                    let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                    if (discution === null) {
-                      console.log('No message found');
-                      await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                      res.json({ status: 'success' });
-                      return;
-                    } else {
-                      
-                      if (!Array.isArray(discution.content)) {
-                        discution.content = [discution.content]; 
-                      }
-                      discution.content.push(messageUser);
-                      discution.content.push(messageBot);
-                      await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                      res.json({ id: chatId });
-                      return;
-                    } 
+                    status.imf = true;
                   }
-
-                } else {
-                  messageFormated = "The following paragraphe is here for contexte, please take it into account when answering the user input" + formated + "The context stop here. The user input start here: " + message;
-                  let response = await newMessage(messageFormated);
-                  let messageUser = { role: 'user', content: message};
-                  let messageBot = response.choices[0].message;
-                  
-                  let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
-                  if (discution === null) {
-                    console.log('No message found');
-                    await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                    res.json({ status: 'success' });
-                    return;
-                  } else {
-                    
-                    if (!Array.isArray(discution.content)) {
-                      discution.content = [discution.content]; 
-                    }
-                    discution.content.push(messageUser);
-                    discution.content.push(messageBot);
-                    await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                    res.json({ id: chatId });
-                    return;
-                  } 
-
                 }
+
+                // Check for the TWB api
+                let CC_TWB = await findCountryCodeTWB(message);
+                CC_TWB = CC_TWB.replace(/\./g, '');
+
+                if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
+                  console.log('step three')
+                    CC_TWB = convertToArray(CC_TWB);
+  
+                    let EI_TWB = await findDataCodeTWB(message);
+  
+                    let EI_TWBTest = EI_TWB.toString();
+                    EI_TWBTest = EI_TWBTest.replace(/\./g, '');
+  
+                    if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
+                      console.log('step foour')
+                      console.log('TWB API is triggered');
+
+                      let valuesTWB = EI_TWB.response;
+                      valuesTWB = convertToArray(valuesTWB);
+  
+                      let keysTWB = EI_TWB.response2.response;
+                      keysTWB = convertToArray(keysTWB);
+  
+                      // We merge the key and the value to have a key value pair
+                      let mergedTWB = keysTWB.map((key, index) => {
+                        return { [key]: valuesTWB[index]};
+                      });
+  
+                      // We get the data from the TWB api based on the country code and the economical indicator find earlier
+                      let dataTWB = await getData(CC_TWB, keysTWB);
+                      dataTWB.forEach(key => {
+                        // use the merged array to change the key to the value in the data object
+                        
+                        for (let i = 0; i < mergedTWB.length; i++) {
+                          let keyName = Object.keys(mergedTWB[i])[0];
+                          let value = mergedTWB[i][keyName];
+                          if (key[keyName] != undefined) {
+                            key[value] = key[keyName];
+                            delete key[keyName];
+                          }
+                        }
+                      })
+                      // we format the data from the twb to be send to the openai api
+                      dataTWB.forEach(element => {
+                        twbNumber.push(element);
+                      })
+                      twbNumber = JSON.stringify(twbNumber);
+                      status.twb = true;
+                    }
+                  }
                 
+                console.log('Status:', status);
+                /* messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Finally include the following contexte to improve even more your answer Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable."; */
+                switch (true) { 
+
+                  case status.imf === true && status.twb === true:
+                    console.log('IMF and TWB APIs are triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+                    
+                  case status.twb === true && status.imf === false:
+                    console.log('TWB API is triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+                  
+                  case status.imf === true && status.twb === false:
+                    console.log('IMF API is triggered');
+                    messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
+                    break;
+
+                  case status.imf === false && status.twb === false:
+                    console.log('No API is triggered');
+                    messageFormated = "Consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ".";
+                    break;
+                }
+
+                // we send it to the openai api
+                let response = await newMessage(messageFormated);
+                let messageUser = { role: 'user', content: message};
+                let messageBot = response.choices[0].message;
+                
+                let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+
+                // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
+                if (discution === null) {
+                  console.log('No message found');
+                  await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
+                  res.json({ status: 'success' });
+                  return;
+                } else {
+                  // Insert the user input and the bot response in the chat
+                  if (!Array.isArray(discution.content)) {
+                    discution.content = [discution.content]; 
+                  }
+                  discution.content.push(messageUser);
+                  discution.content.push(messageBot);
+                  await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
+                  res.json({ id: chatId });
+                  return;
+                } 
                  
               } catch (error) {
                 console.error('Error during message creation:', error);
@@ -758,7 +745,6 @@ app.post('/newMessage', express.json(), async (req, res) => {
 
 // ========================================================================================================
 // start the server
-
 app.listen(port, () => {
     console.log('Server app listening on port ' + port);
 });

@@ -9,28 +9,21 @@ async function generateJwtToken(payload) {
     return token;
 };
 
-async function verifyJwtToken(token) {
-    //console.log('start verify jwt')
+function verifyJwtToken(token) {
     try {
-        //console.log('inside Try')
+
         const secret = process.env.JWT_SECRET;
-        // console.log('secret')
-        // console.log(secret)
+
         const payload = jsonwebtoken.verify(token, secret);
-        // console.log('payload')
-        // console.log(payload)
-        
+
         const currentTime = Math.floor(Date.now() / 1000);
-        // console.log('current Time')
-        // console.log(currentTime)
+
         const issuedAtTime = payload.iat;
-        // console.log('issued at Time')
-        // console.log(issuedAtTime)
         
-        const isLessThan24Hours = (currentTime - issuedAtTime) < 86400; //86400
-        //console.log('isLessThan24Hours')
-        //console.log(isLessThan24Hours)
-        return isLessThan24Hours; 
+        const isValid = (currentTime - issuedAtTime) < 3600; //86400=1j 3600=1h
+
+        return isValid; 
+        
     } catch (error) {
         console.error('Error verifying JWT token:', error);
         return false;
