@@ -1,3 +1,5 @@
+/* Good luck to any dev passing by, when i wrote it only i and god now how it work, now only him*/
+
 // ========================================================================================================
 // Import the required modules
 import * as dotenv from 'dotenv'; // load the environement variable
@@ -113,6 +115,7 @@ app.get('/', (req, res) => {
 
     res.set('Content-Type', 'text/html');
     console.log('The serveur is running');
+    res.status(200);
     res.send('Welcome !');
 
 });
@@ -551,8 +554,8 @@ app.post('/newMessage', express.json(), async (req, res) => {
       let message = req.body.message;
       let chatId = req.body.chatId;
       let status = {
-        "twb": null,
-        "imf": null
+        "twb": false,
+        "imf": false
       };
       
       await collectionUser.findOne({ token: token })
@@ -569,25 +572,33 @@ app.post('/newMessage', express.json(), async (req, res) => {
 
                 // We get all the previous message in the chat
                 let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+                //console.log('Previous message:', previousMessage);
                 previousMessage = JSON.stringify(previousMessage.content);
                 let imfNumber = [];
                 let twbNumber = [];
                 let messageFormated = '';
+
+                // get intel from private data
+                // let privateData = await search(indexData, message);
 
                 // Check for the IMF api
                 let CC_IMF = await findCountryCodeIMF(message);
                 CC_IMF = CC_IMF.replace(/\./g, '');
 
                 if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
-
+                  console.log('step one')
                   CC_IMF = convertToArray(CC_IMF);
 
                   let EI_IMF = await findDataCodeIMF(message);
 
                   let EI_IMFTest = EI_IMF.toString();
                   EI_IMFTest = EI_IMFTest.replace(/\./g, '');
+                  console.log('EI_IMFTest:', EI_IMFTest);
 
                   if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
+                    console.log('step two')
+                    console.log('IMF API is triggered');
+
                     let valuesIMF = EI_IMF.response;
                     valuesIMF = convertToArray(valuesIMF);
 
@@ -627,7 +638,7 @@ app.post('/newMessage', express.json(), async (req, res) => {
                 CC_TWB = CC_TWB.replace(/\./g, '');
 
                 if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
-                    
+                  console.log('step three')
                     CC_TWB = convertToArray(CC_TWB);
   
                     let EI_TWB = await findDataCodeTWB(message);
@@ -636,6 +647,9 @@ app.post('/newMessage', express.json(), async (req, res) => {
                     EI_TWBTest = EI_TWBTest.replace(/\./g, '');
   
                     if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
+                      console.log('step foour')
+                      console.log('TWB API is triggered');
+
                       let valuesTWB = EI_TWB.response;
                       valuesTWB = convertToArray(valuesTWB);
   
@@ -671,25 +685,28 @@ app.post('/newMessage', express.json(), async (req, res) => {
                   }
                 
                 console.log('Status:', status);
+                /* messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Finally include the following contexte to improve even more your answer Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable."; */
                 switch (true) { 
+
                   case status.imf === true && status.twb === true:
                     console.log('IMF and TWB APIs are triggered');
                     messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
                     break;
                     
-                  case status.twb === true:
+                  case status.twb === true && status.imf === false:
                     console.log('TWB API is triggered');
                     messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
                     break;
-
-                  case status.imf === true:
+                  
+                  case status.imf === true && status.twb === false:
                     console.log('IMF API is triggered');
                     messageFormated = "Please analyze the following data to provide a numeric-based response: " + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable.";
                     break;
 
-                  default:
+                  case status.imf === false && status.twb === false:
                     console.log('No API is triggered');
                     messageFormated = "Consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Based on the above information, respond to the following user query: " + message + ".";
+                    break;
                 }
 
                 // we send it to the openai api

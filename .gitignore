@@ -12,3 +12,6 @@ extractorCC.js
 extractorEI.js
 rawTWB_CC.json
 rawTWB_EI.json
+200k.js
+vercel.json
+slicerEI.js
