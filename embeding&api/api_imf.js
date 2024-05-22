@@ -1,5 +1,7 @@
 const baseUrl = 'https://www.imf.org/external/datamapper/api/v1';
 
+// ========================================================================================================
+// function to fetch data from the International Monetary Fund api
 async function getIMFData(ContryCodes, IndicatorCodes) {
     console.log('IMF api request is triggered');
     let promises = [];

@@ -77,6 +77,81 @@ Dans un terminal administrateur =>
 Dans le fichier sources de python, dans propriétés, puis sécurité.
 S'assurez que les bonnes personnes on l'autorisation de controle total.
 
+# Déploiment 
+
+Le serveur est déploier sur render avec le plan gratuit
+
+Url de base => 
+`https://chatbot-backend-o6is.onrender.com`
+
+# EndPoint
+
+## Authentification 
+
+Base => `/auth`
+
+### Crée un compte : POST => `/register` 
+
+    Require : 'name', 'email', 'password'
+
+### Se connecter : POST => `/login`
+
+    Require 'email', 'password'
+
+## Gestion User
+
+    Require header => `Authorization: Bearer [userToken]`
+
+Base => `/user`
+
+### afficher le profile : GET => `/profile`
+
+### afficher la photo de profile : GET => `/picture`
+
+### modifier le profile : POST => `/profile`
+
+    Require 'name', 'email', 'password'
+
+### modifier la photo de profile : POST => `/picture`
+
+    Require 'picture', 'extention'
+
+    (picture must be encoded in base64)
+
+### suprimer le compte : POST => `/deleteProfile`
+
+    Require 'confirm'
+
+## Gestion Discution 
+
+    Require header => `Authorization: Bearer [userToken]`
+
+Base => `/api/discution`
+
+### Crée une discution : POST => `/new`
+
+    Require 'chatName'
+
+### Récupérer les discutions : GET => `/get`
+
+### Suprimer une discution : POST => `/delete`
+
+    Require 'chatId'
+
+## Gestion Message
+
+    Require header => `Authorization: Bearer [userToken]`
+
+Base => `/api/message`
+
+### Récupérer les messages : POST => `/get`
+
+    Require 'chatId'
+
+### Envoyer un message : POST => `/new`
+
+    Require 'message', 'chatId'
+
 # Dependence 
 
 <ul>
@@ -91,6 +166,3 @@ S'assurez que les bonnes personnes on l'autorisation de controle total.
     <li>"mongodb": "6.5"</li>
     <li>"openai": "^4.29.2"</li>
 </ul>
-
-
-

@@ -175,13 +175,13 @@ async function findDataCodeIMF (input) {
 // ========================================================================================================
 // Find the country code for The World Bank (TWB)
 async function findCountryCodeTWB (input) {
-
+    console.log('debug twb api')
     const queryEngine = indexCCTWB.asQueryEngine(); 
     console.log('cl de la function =>' + input)
     const response = await queryEngine.query({
         query: "If the following string [ "+ input +" ] talk, state, utter, pronouce or mensions one or more country, find all the country code in the document. Else answer 'no'. Watch out Theire can be multiple country.",
     });
-
+    console.log('debug resp' + response.response)
     return response.response
 
 };
@@ -189,7 +189,7 @@ async function findCountryCodeTWB (input) {
 // ========================================================================================================
 // Find the economical indicator for The World Bank (TWB)
 async function findDataCodeTWB (input) {
-    console.log('Indicator search is triger')
+    console.log('Indicator search is triger fro TWB')
     
     const queryEngine = indexDCTWB.asQueryEngine(); 
 
