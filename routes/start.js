@@ -43,8 +43,9 @@ router.post('/api/message/new', MessageController.new);
 
 /* 404 */ 
 
-// router.get('*', (req, res) => {
-//     res.status(404).json({ error: 'Page not found' });
-// });
+router.use('*', (req, res) => {
+    console.log('404');
+    res.status(404).json({ error: 'Page not found' });
+});
 
 export default router;
