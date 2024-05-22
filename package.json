@@ -5,9 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "serve": "node server.js",
+    "serve": "node index.js",
     "chroma": "node chromadb.js",
-    "full": "node chromadb.js && node server.js"
+    "full": "node chromadb.js && node index.js"
   },
   "author": "pierre-louis sans",
   "license": "ISC",

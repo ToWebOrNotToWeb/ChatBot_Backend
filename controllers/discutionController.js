@@ -1,9 +1,11 @@
+import { ObjectId } from 'mongodb';
+import { collectionChat, collectionMessage, collectionUser } from '../databases/mongoDb.js';
 
 class DiscussionController {
 
     async new (req, res) {
 
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let chatName = req.body.chatName;
         //console.log('location 1')
         
@@ -50,7 +52,7 @@ class DiscussionController {
 
     async get (req, res) {
 
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
       
         await collectionUser.findOne({ token: token })
             .then(async (user) => {
@@ -80,7 +82,7 @@ class DiscussionController {
 
     async delete (req, res) {
 
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let _id = req.body.chatId;
     
         await collectionUser.findOne({ token: token })

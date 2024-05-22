@@ -1,5 +1,6 @@
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
 import { generateJwtToken } from '../utils/jwt.js';
+import { collectionUser } from '../databases/mongoDb.js';
 
 class AuthController {
 
@@ -51,10 +52,11 @@ class AuthController {
         
             // make sure the user exists
             let query = { email: email};
+
             let result = await collectionUser.findOne(query);
-        
+
             if (result != null) {
-        
+
                 // check the password
                 if (await comparePassword(password, result.hashedPassword)) {
         

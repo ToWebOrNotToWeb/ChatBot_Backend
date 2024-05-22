@@ -1,9 +1,15 @@
-
+import { ObjectId } from 'mongodb';
+import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
+import { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB } from '../embeding&api/llama.js';
+import { getIMFData } from '../embeding&api/api_imf.js';
+import { getTWBData } from '../embeding&api/api_twb.js';
+import { newMessage } from '../embeding&api/api_openai.js';
+import { convertToArray } from '../utils/toArray.js';
 class MessageController {
 
     async get (req, res) {
   
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let chatId = req.body.chatId;
     
         await collectionUser.findOne({ token: token })
@@ -30,7 +36,7 @@ class MessageController {
 
     async new (req, res) {
 
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let message = req.body.message;
         let chatId = req.body.chatId;
         let status = {

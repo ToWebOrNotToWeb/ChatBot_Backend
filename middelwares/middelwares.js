@@ -1,6 +1,7 @@
 import jsonwebtoken from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 
+dotenv.config();
 // ========================================================================================================
 // verify if the token is expired or not ( 3 hours )
 function verifyJwtToken(req, res, next) {

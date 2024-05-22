@@ -1,11 +1,12 @@
-
+import { collectionUser, collectionPicture } from '../databases/mongoDb.js';
+import { hashPassword } from '../utils/bcrypt.js';
+import { ObjectId } from 'mongodb';
 class UserController {
 
     async showProfile (req, res) {
-        //console.log('trying to retreave a profile')
-        let token = req.headers.token;
-        //console.log('location 1')
-        //console.log(token)
+
+        let token = req.headers.authorization.split(' ')[1];
+
     
         await collectionUser.findOne({ token: token })
             .then((user) => {
@@ -30,9 +31,8 @@ class UserController {
     }
 
     async showPicture (req, res) {
-        //console.log('Proceding to get picture ');
         
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         
         
         await collectionUser.findOne({ token: token })
@@ -72,7 +72,7 @@ class UserController {
 
     async updateProfile (req, res) {
 
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let name = req.body.name;
         let email = req.body.email;
         let password = req.body.password;
@@ -118,7 +118,7 @@ class UserController {
     async updatePicture (req, res) {
     //console.log('Proceding to update picture ');
     
-    let token = req.headers.token;
+    let token = req.headers.authorization.split(' ')[1];
     let imgBase64 = req.body.picture;
     let extention = req.body.extention;
     
@@ -162,7 +162,7 @@ class UserController {
     }
 
     async deleteProfile (req, res) {
-        let token = req.headers.token;
+        let token = req.headers.authorization.split(' ')[1];
         let confirm = req.body.confirm;
         
         await collectionUser.findOne({ token: token })
