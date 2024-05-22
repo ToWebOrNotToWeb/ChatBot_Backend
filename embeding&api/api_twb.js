@@ -1,5 +1,7 @@
 const baseUrl = "https://api.worldbank.org/v2";
 
+// ========================================================================================================
+// function to fetch data from the World Bank api 
 async function getTWBData(countryCode, indicator) {
     console.log('TWB api is trigered')
 
@@ -11,7 +13,7 @@ async function getTWBData(countryCode, indicator) {
             const url = `${baseUrl}/${indicator}/${country}`;
             // Push the fetch promise into the promises array
             promises.push(fetch(url).then(response => response.json()).then(data => data.values));
-            //console.log('IMF api request is sent');
+            console.log('twb api request is sent');
         });
     });
 
@@ -20,8 +22,8 @@ async function getTWBData(countryCode, indicator) {
         // Flatten the array of arrays to a single array
         return [].concat(...results);
     });
-    //console.log('IMF api request is resolved');
-    //console.table(back);
+    console.log('twb api request is resolved');
+    console.table(back);
     return back;
 }
 

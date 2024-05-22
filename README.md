@@ -77,6 +77,10 @@ Dans un terminal administrateur =>
 Dans le fichier sources de python, dans propriétés, puis sécurité.
 S'assurez que les bonnes personnes on l'autorisation de controle total.
 
+# Déploiment 
+
+Sur render =>  `https://chatbot-backend-o6is.onrender.com`
+
 # Dependence 
 
 <ul>
@@ -91,6 +95,3 @@ S'assurez que les bonnes personnes on l'autorisation de controle total.
     <li>"mongodb": "6.5"</li>
     <li>"openai": "^4.29.2"</li>
 </ul>
-
-
-

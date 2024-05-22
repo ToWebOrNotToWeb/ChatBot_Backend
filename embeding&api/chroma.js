@@ -41,14 +41,14 @@ async function search(indexPromise, input) {
 };
 
 // Utilize an async IIFE (Immediately Invoked Function Expression) to handle the search
-//(async () => {
+// (async () => {
 //    try {
 //        const results = await search(embeddData(), "On average how mutch time per day does people from Philippines use internet? Is it a lot ?");
 //        console.log(results.response);
 //    } catch (e) {
 //        console.error('Error executing search:', e);
 //    }
-//})();
+// })();
 
 
 export { embeddData, search };
