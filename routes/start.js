@@ -23,7 +23,7 @@ router.post('/auth/register', AuthController.register);
 router.post('/auth/login', AuthController.login);
   
 /* User route */
-
+ 
 router.get('/user/profile', UserController.showProfile);
 router.get('/user/picture', UserController.showPicture);
 router.post('/user/profile', UserController.updateProfile);

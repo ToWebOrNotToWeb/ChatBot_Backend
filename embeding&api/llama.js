@@ -24,7 +24,7 @@ const dataDCTWB = "apiData/IndicatorTWB";
 const essayDCTWB = await fs.readdir(dataDCTWB, "utf-8");
 const documentDCTWB = new Document({ text: essayDCTWB});
 const indexDCTWB = await VectorStoreIndex.fromDocuments([documentDCTWB]);
-
+ 
 // ========================================================================================================
 // ?????
 let obj = {};

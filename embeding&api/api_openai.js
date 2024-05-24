@@ -20,5 +20,5 @@ async function newMessage (input) {
     });
     return completion
 }
-
+ 
 export { newMessage };
