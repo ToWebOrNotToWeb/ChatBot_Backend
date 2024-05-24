@@ -5,6 +5,10 @@ import { getIMFData } from '../embeding&api/api_imf.js';
 import { getTWBData } from '../embeding&api/api_twb.js';
 import { newMessage } from '../embeding&api/api_openai.js';
 import { convertToArray } from '../utils/toArray.js';
+import indexPrivateData from '../databases/chromaDb.js'
+import { search } from '../embeding&api/chroma.js';
+
+const IPD = indexPrivateData;
 class MessageController {
 
     async get (req, res) {
@@ -35,7 +39,7 @@ class MessageController {
     }
 
     async new (req, res) {
-
+        
         let token = req.headers.authorization.split(' ')[1];
         let message = req.body.message;
         let chatId = req.body.chatId;
@@ -170,29 +174,31 @@ class MessageController {
                       }
                     }
                   
+
+                  let privateData = await search(IPD, message)
+
                   console.log('Status:', status);
-                  console.log(imfNumber)
-                  /* messageFormated = "Please analyze the following data to provide a numeric-based response: " + twbNumber + imfNumber + ". End of data section. Use relevant numbers to enhance your answer. Now, consider the historical context of this discussion for a better understanding: " + previousMessage + ". End of context section. Finally include the following contexte to improve even more your answer Based on the above information, respond to the following user query: " + message + ". Ensure your response integrates specific figures from the provided data where applicable."; */
+                  console.log(privateData)
                   switch (true) { 
     
                     case status.imf === true && status.twb === true:
                       console.log('IMF and TWB APIs are triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce. Please answer the following input : " + message + ". In your answer you NEED to take into consideation all the following data&number and you MUST include number in your answer. They are relevent and usefull. Data&number : " + twbNumber + imfNumber + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ".";
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfNumber + ". Here is the data from the TWB API :" + twbNumber;
                       break;
                       
                     case status.twb === true && status.imf === false:
                       console.log('TWB API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce. Please answer the following input : " + message + ". In your answer you NEED to take into consideation all the following data&number and you MUST include number in your answer. They are relevent and usefull. Data&number : " + twbNumber + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ".";
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the TWB API :" + twbNumber;
                       break;
                     
                     case status.imf === true && status.twb === false:
                       console.log('IMF API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce. Please answer the following input : " + message + ". In your answer you NEED to take into consideation all the following data&number and you MUST include number in your answer. They are relevent and usefull. Data&number : " + imfNumber + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ".";
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfNumber;
                       break;
     
                     case status.imf === false && status.twb === false:
                       console.log('No API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce. Please answer the following input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ".";
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData;
                       break;
                   }
     
@@ -217,7 +223,7 @@ class MessageController {
                     discution.content.push(messageUser);
                     discution.content.push(messageBot);
                     await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                    res.json({ id: chatId });
+                    res.status(200).json({ id: chatId });
                     return;
                   } 
                    

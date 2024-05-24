@@ -26,7 +26,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 run().catch(console.dir);
 
-
+ 
 
 // ========================================================================================================
 // Emmbed the data and define the index

@@ -23,7 +23,7 @@ router.post('/auth/register', AuthController.register);
 router.post('/auth/login', AuthController.login);
   
 /* User route */
-
+ 
 router.get('/user/profile', UserController.showProfile);
 router.get('/user/picture', UserController.showPicture);
 router.post('/user/profile', UserController.updateProfile);
@@ -43,8 +43,9 @@ router.post('/api/message/new', MessageController.new);
 
 /* 404 */ 
 
-// router.get('*', (req, res) => {
-//     res.status(404).json({ error: 'Page not found' });
-// });
+router.use('*', (req, res) => {
+    console.log('404');
+    res.status(404).json({ error: 'Page not found' });
+});
 
 export default router;
