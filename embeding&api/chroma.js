@@ -21,7 +21,7 @@ async function embeddData() {
         console.log("Embedding documents and adding to index");
         const index = await VectorStoreIndex.fromDocuments(docs, {text_splitter: textSplitter} ,{ storageContext: ctx });
 
-        console.log("Index created, The serveur and chromaDb are running fine and ready to use !");
+        console.log("Index created, the serveur and chromaDb are running fine and ready to use !");
         return index;
 
     } catch (e) {

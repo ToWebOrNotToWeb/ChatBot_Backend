@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
 
     res.set('Content-Type', 'text/html');
-    console.log('The serveur is running');
+    // console.log('The serveur is running');
     res.status(200);
     res.send('Welcome !');
 
