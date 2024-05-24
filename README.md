@@ -59,9 +59,10 @@ Procedure pour faire tourner le projet.
 
 ## variable d'environement
 Penser a crée un fichier .env en suivant l'example
+
 Penser a load la clée open ai dans l'environement (peut être pas nessesaire)
 
-
+## Backend
 A la racine =>
 `npm run index`
 
