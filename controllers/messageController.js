@@ -1,10 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
-import { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB } from '../embeding&api/llama.js';
-import { getIMFData } from '../embeding&api/api_imf.js';
-import { getTWBData } from '../embeding&api/api_twb.js';
+import { checkIMFapi } from '../embeding&api/api_imf.js';
+import { checkTWBapi } from '../embeding&api/api_twb.js';
 import { newMessage } from '../embeding&api/api_openai.js';
-import { convertToArray } from '../utils/toArray.js';
 import indexPrivateData from '../utils/dataIndex.js'
 import { search } from '../embeding&api/chroma.js';
 
@@ -64,118 +62,22 @@ class MessageController {
                   let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
                   //console.log('Previous message:', previousMessage);
                   previousMessage = JSON.stringify(previousMessage.content);
-                  let imfNumber = [];
-                  let twbNumber = [];
                   let messageFormated = '';
     
-                  // get intel from private data
-                  // let privateData = await search(indexData, message);
-    
-                  // Check for the IMF api
-                  let CC_IMF = await findCountryCodeIMF(message);
-                  CC_IMF = CC_IMF.replace(/\./g, '');
-    
-                  if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
-                    console.log('step one')
-                    CC_IMF = convertToArray(CC_IMF);
-    
-                    let EI_IMF = await findDataCodeIMF(message);
-    
-                    let EI_IMFTest = EI_IMF.toString();
-                    EI_IMFTest = EI_IMFTest.replace(/\./g, '');
-                    console.log('EI_IMFTest:', EI_IMFTest);
-    
-                    if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
-                      console.log('step two')
-                      console.log('IMF API is triggered');
-    
-                      let valuesIMF = EI_IMF.response;
-                      valuesIMF = convertToArray(valuesIMF);
-    
-                      let keysIMF = EI_IMF.response2.response;
-                      keysIMF = convertToArray(keysIMF);
-    
-                      // We merge the key and the value to have a key value pair
-                      let mergedIMF = keysIMF.map((key, index) => {
-                        return { [key]: valuesIMF[index]};
-                      });
-    
-                      // We get the data from the IMF api based on the country code and the economical indicator find earlier
-                      let dataIMF = await getIMFData(CC_IMF, keysIMF);
-                      dataIMF.forEach(key => {
-                        // use the merged array to change the key to the value in the data object
-                        
-                        for (let i = 0; i < mergedIMF.length; i++) {
-                          let keyName = Object.keys(mergedIMF[i])[0];
-                          let value = mergedIMF[i][keyName];
-                          if (key[keyName] != undefined) {
-                            key[value] = key[keyName];
-                            delete key[keyName];
-                          }
-                        }
-                      })
-                      // we format the data from the imf to be send to the openai api
-                      dataIMF.forEach(element => {
-                        imfNumber.push(element);
-                      })
-                      imfNumber = JSON.stringify(imfNumber);
-                      status.imf = true;
-                    }
-                  }
-    
-                  // Check for the TWB api
-                  let CC_TWB = await findCountryCodeTWB(message);
-                  CC_TWB = CC_TWB.replace(/\./g, '');
-    
-                  if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
-                    console.log('step three')
-                      CC_TWB = convertToArray(CC_TWB);
-    
-                      let EI_TWB = await findDataCodeTWB(message);
-    
-                      let EI_TWBTest = EI_TWB.toString();
-                      EI_TWBTest = EI_TWBTest.replace(/\./g, '');
-    
-                      if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
-                        console.log('step foour')
-                        console.log('TWB API is triggered');
-    
-                        let valuesTWB = EI_TWB.response;
-                        valuesTWB = convertToArray(valuesTWB);
-    
-                        let keysTWB = EI_TWB.response2.response;
-                        keysTWB = convertToArray(keysTWB);
-    
-                        // We merge the key and the value to have a key value pair
-                        let mergedTWB = keysTWB.map((key, index) => {
-                          return { [key]: valuesTWB[index]};
-                        });
-    
-                        // We get the data from the TWB api based on the country code and the economical indicator find earlier
-                        let dataTWB = await getTWBData(CC_TWB, keysTWB);
-                        dataTWB.forEach(key => {
-                          // use the merged array to change the key to the value in the data object
-                          
-                          for (let i = 0; i < mergedTWB.length; i++) {
-                            let keyName = Object.keys(mergedTWB[i])[0];
-                            let value = mergedTWB[i][keyName];
-                            if (key[keyName] != undefined) {
-                              key[value] = key[keyName];
-                              delete key[keyName];
-                            }
-                          }
-                        })
-                        // we format the data from the twb to be send to the openai api
-                        dataTWB.forEach(element => {
-                          twbNumber.push(element);
-                        })
-                        twbNumber = JSON.stringify(twbNumber);
-                        status.twb = true;
-                      }
-                    }
-                  
-
+  
+                  let imfData = await checkIMFapi(message, status);
+                  let twbData = await checkTWBapi(message, status);
                   let privateData = await search(IPD, message)
+
+                  Promise.all([
+                    imfData,
+                    twbData,
+                    privateData
+                  ]).then((values) => {
+                    imfData = values[0];
+                    twbData = values[1];
+                    privateData = values[2];
+                  });
 
                   console.log('Status:', status);
                   console.log(privateData)
@@ -183,17 +85,17 @@ class MessageController {
     
                     case status.imf === true && status.twb === true:
                       console.log('IMF and TWB APIs are triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfNumber + ". Here is the data from the TWB API :" + twbNumber;
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfData + ". Here is the data from the TWB API :" + twbData;
                       break;
                       
                     case status.twb === true && status.imf === false:
                       console.log('TWB API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the TWB API :" + twbNumber;
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the TWB API :" + twbData;
                       break;
                     
                     case status.imf === true && status.twb === false:
                       console.log('IMF API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfNumber;
+                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfData;
                       break;
     
                     case status.imf === false && status.twb === false:
