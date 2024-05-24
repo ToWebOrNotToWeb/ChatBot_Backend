@@ -11,13 +11,6 @@ import { verifyJwtToken } from './middelwares/middelwares.js'; // to verify the 
 
 import { OpenAI } from 'openai'; // ???
 
-import { embeddData, search } from './embeding&api/chroma.js' // to embedd the data and search in the index
-
-import { json } from 'stream/consumers'; // ???? 
-//import { multer } from 'multer';
-//import { GridFsStorage  } from 'multer-gridfs-storage';
-
-
 // ========================================================================================================
 // load the environment variables
 dotenv.config();
@@ -25,12 +18,6 @@ dotenv.config();
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 run().catch(console.dir);
-
- 
-
-// ========================================================================================================
-// Emmbed the data and define the index
-//const indexData = embeddData();
 
 
 // ========================================================================================================
