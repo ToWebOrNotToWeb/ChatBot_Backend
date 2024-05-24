@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "node --watch index.js",
     "chroma": "node databases/chromadb.js",
-    "fullHouse": "node index.js"
+    "index": "node index.js",
+    "fullHouse": "node databases/chromadb.js && node index.js"
   },
   "author": "pierre-louis sans",
   "license": "ISC",

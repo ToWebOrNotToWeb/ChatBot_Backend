@@ -5,7 +5,7 @@ import { getIMFData } from '../embeding&api/api_imf.js';
 import { getTWBData } from '../embeding&api/api_twb.js';
 import { newMessage } from '../embeding&api/api_openai.js';
 import { convertToArray } from '../utils/toArray.js';
-import indexPrivateData from '../databases/chromaDb.js'
+import indexPrivateData from '../utils/dataIndex.js'
 import { search } from '../embeding&api/chroma.js';
 
 const IPD = indexPrivateData;

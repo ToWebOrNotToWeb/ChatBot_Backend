@@ -1,5 +1,4 @@
 import { exec } from 'child_process';
-import { embeddData } from '../embeding&api/chroma.js'
 
 // ========================================================================================================
 // This function is used to run the chromaDb server, which is needed to store the embeded data and perform search in it
@@ -32,7 +31,3 @@ if (process.platform === 'linux') {
 } else {
     console.error('Unsupported platform');
 }
-
-const indexPrivateData = embeddData();
-
-export default indexPrivateData 

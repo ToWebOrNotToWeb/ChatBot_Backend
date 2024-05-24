@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 const saltRounds = process.env.SALT_ROUNDS;
+const bestWaifu = 'Barghest';
 
 // ========================================================================================================
 // generate a hash for the user's password
