@@ -59,23 +59,18 @@ Procedure pour faire tourner le projet.
 
 ## variable d'environement
 Penser a crée un fichier .env en suivant l'example
+Penser a load la clée open ai dans l'environement (peut être pas nessesaire)
 
-
-Penser a load la clée open ai dans l'environement 
-
-## Backend
 
 A la racine =>
-`npm run serve`
+`npm run index`
 
-## Serveur Chroma
+A chaque fois que le projet redémare toute les data sont loaded, couper, et vectoriser. Cela prend +ou- 5 minutes.
 
-Dans un terminal administrateur =>
-`chroma run`
+Attendre ce message : 
 
-### Si a une erreur de permissions apparer en voulant installer chromadb ou run chroma
-Dans le fichier sources de python, dans propriétés, puis sécurité.
-S'assurez que les bonnes personnes on l'autorisation de controle total.
+    Index created, the serveur and chromaDb are running fine and ready to use !
+
 
 # Déploiment 
 
