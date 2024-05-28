@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
-import { Document, VectorStoreIndex, SimpleDirectoryReader } from "llamaindex";
+import { Document, VectorStoreIndex, Settings, OpenAIEmbedding  } from "llamaindex";
+
+Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small')
 
 // ========================================================================================================
 // Embedd the  country code and economical indicator for the International Monetary Fund (IMF) and create the indexs
