@@ -66,7 +66,7 @@ Penser a load la clée open ai dans l'environement (peut être pas nessesaire)
 A la racine =>
 `npm run index`
 
-A chaque fois que le projet redémare toute les datas sont charger, couper, et vectoriser. Cela prend +ou- 5 minutes.
+A chaque fois que le projet redémare toute les datas sont charger, couper, et vectoriser. Cela prend +ou- 10 minutes.
 
 Attendre ce message : 
 

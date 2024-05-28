@@ -2,9 +2,10 @@ import { ObjectId } from 'mongodb';
 import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
 import { checkIMFapi } from '../embeding&api/api_imf.js';
 import { checkTWBapi } from '../embeding&api/api_twb.js';
-import { newMessage } from '../embeding&api/api_openai.js';
+import { newMessage, streamMessage } from '../embeding&api/api_openai.js';
 import indexPrivateData from '../utils/dataIndex.js'
 import { search } from '../embeding&api/chroma.js';
+
 
 const IPD = indexPrivateData;
 class MessageController {
@@ -80,7 +81,7 @@ class MessageController {
                   });
 
                   console.log('Status:', status);
-                  console.log(privateData)
+                  //console.log(privateData)
                   switch (true) { 
     
                     case status.imf === true && status.twb === true:
@@ -106,6 +107,7 @@ class MessageController {
     
                   // we send it to the openai api
                   let response = await newMessage(messageFormated);
+                  console.log('Response:', response);
                   let messageUser = { role: 'user', content: message};
                   let messageBot = response.choices[0].message;
                   
@@ -137,6 +139,78 @@ class MessageController {
             });
     }
 
+    async pipeline(req, res) {
+      let token = req.headers.authorization.split(' ')[1];
+      let message = req.body.message;
+      let chatId = req.body.chatId;
+      let status = {
+          "twb": false,
+          "imf": false
+      };
+
+      try {
+          let user = await collectionUser.findOne({ token: token });
+
+          if (!user) {
+              res.status(403).json({ error: 'Unauthorized' });
+              return;
+          }
+
+          let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+          previousMessage = previousMessage ? JSON.stringify(previousMessage.content) : "No previous messages.";
+          let messageFormatted = '';
+
+          let [imfData, twbData, privateData] = await Promise.all([
+              checkIMFapi(message, status),
+              checkTWBapi(message, status),
+              search(IPD, message)
+          ]);
+
+          switch (true) {
+              case status.imf && status.twb:
+                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}. Here is the data from the TWB API: ${twbData}`;
+                  break;
+
+              case status.twb:
+                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the TWB API: ${twbData}`;
+                  break;
+
+              case status.imf:
+                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}`;
+                  break;
+
+              default:
+                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}`;
+                  break;
+          }
+
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+
+          await streamMessage(messageFormatted, chunk => {
+              res.write(`data: ${chunk}\n\n`);
+              console.log(chunk);
+          });
+
+          res.write('data: [DONE]\n\n');
+          res.end();
+
+      } catch (error) {
+          console.error('Error during message creation:', error);
+          res.status(500).json({ error: error.message });
+      }
+  }
+    
+
 }
+
+
+
+// io.on('connectMessage', (socket) => {
+              //   console.log('a user connected');
+              //   console.log(chunk);
+              //   socket.emit('streamMessage', chunk);
+              // });
 
 export default new MessageController();

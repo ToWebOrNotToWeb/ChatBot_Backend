@@ -40,6 +40,7 @@ router.post('/api/discution/delete', DiscussionController.delete);
 
 router.post('/api/message/get', MessageController.get);
 router.post('/api/message/new', MessageController.new);
+router.post('/api/message/pipeline', MessageController.pipeline);
 
 /* 404 */ 
 

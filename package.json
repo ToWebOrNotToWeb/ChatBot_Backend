@@ -19,6 +19,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "llama": "^2.1.13",
     "llama-node": "^0.1.6",
@@ -26,7 +27,8 @@
     "mongodb": "6.5",
     "multer": "^1.4.2",
     "multer-gridfs-storage": "^5.0.2",
-    "openai": "^4.29.2"
+    "openai": "^4.29.2",
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.30"

@@ -2,14 +2,14 @@ import bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-const saltRounds = process.env.SALT_ROUNDS;
+const saltRounds = Number(process.env.SALT_ROUNDS);
 const bestWaifu = 'Barghest';
 
 // ========================================================================================================
 // generate a hash for the user's password
 
 async function hashPassword (password) {
-    return await bcrypt.hash(password, saltRounds);
+    return bcrypt.hash(password, saltRounds);
 }
 
 // ========================================================================================================
