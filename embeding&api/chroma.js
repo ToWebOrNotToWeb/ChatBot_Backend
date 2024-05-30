@@ -1,6 +1,8 @@
 import { SimpleDirectoryReader, ChromaVectorStore, storageContextFromDefaults, VectorStoreIndex, SentenceSplitter, Settings, OpenAIEmbedding } from 'llamaindex';
 
-Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small');
+
+Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small')
+
 
 // ========================================================================================================
 // Embedd all the data and create the index
@@ -40,8 +42,8 @@ async function search(indexPromise, input) {
         console.log('Searching inside private data')
         const queryEngine = index.asQueryEngine();
         const response = await queryEngine.query({ query: input });
-        console.log('PD Ansxer is :')
-        console.log(response)
+        //console.log('PD Ansxer is :')
+        //console.log(response)
 
         return response;
     } else {

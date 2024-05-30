@@ -27,7 +27,7 @@ async function getTWBData(countryCode, indicator) {
             return [].concat(...results);
         });
         console.log('twb api request is resolved');
-        console.table(back);
+        //console.table(back);
         return back;
     } catch(e) {
         console.log(e)
