@@ -189,11 +189,11 @@ class MessageController {
           res.setHeader('Connection', 'keep-alive');
 
           await streamMessage(messageFormatted, chunk => {
-              res.write(`data: ${chunk}\n\n`);
-              console.log(chunk);
+            console.log(typeof chunk)
+            console.log(chunk)
+              res.write(chunk);
           });
 
-          res.write('data: [DONE]\n\n');
           res.end();
 
       } catch (error) {

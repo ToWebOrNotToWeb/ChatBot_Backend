@@ -21,6 +21,7 @@ const client = new MongoClient(uri, {
 
 });
 
+
 const collectionUser = client.db("chatBotDB").collection("users");
 const collectionChat = client.db("chatBotDB").collection("chats"); 
 const collectionMessage = client.db("chatBotDB").collection("logs"); 
