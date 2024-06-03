@@ -53,8 +53,8 @@ async function checkTWBapi(message, status) {
             EI_TWBTest = EI_TWBTest.replace(/\./g, '');
 
             if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
-            console.log('step foour')
-            console.log('TWB API is triggered');
+            //console.log('step foour')
+            //console.log('TWB API is triggered');
 
             let valuesTWB = EI_TWB.response;
             valuesTWB = convertToArray(valuesTWB);

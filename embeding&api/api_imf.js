@@ -40,18 +40,18 @@ async function getIMFData(ContryCodes, IndicatorCodes) {
             CC_IMF = CC_IMF.replace(/\./g, '');
 
             if (CC_IMF.trim() != 'No' && CC_IMF.trim() != 'no') {
-            console.log('step one')
+            //console.log('step one')
             CC_IMF = convertToArray(CC_IMF);
 
             let EI_IMF = await findDataCodeIMF(message);
 
             let EI_IMFTest = EI_IMF.toString();
             EI_IMFTest = EI_IMFTest.replace(/\./g, '');
-            console.log('EI_IMFTest:', EI_IMFTest);
+            //console.log('EI_IMFTest:', EI_IMFTest);
 
             if (EI_IMFTest.trim() != 'No' && EI_IMFTest.trim() != 'no') {
-                console.log('step two')
-                console.log('IMF API is triggered');
+                //console.log('step two')
+                //console.log('IMF API is triggered');
 
                 let valuesIMF = EI_IMF.response;
                 valuesIMF = convertToArray(valuesIMF);

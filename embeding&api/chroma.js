@@ -42,8 +42,6 @@ async function search(indexPromise, input) {
         console.log('Searching inside private data')
         const queryEngine = index.asQueryEngine();
         const response = await queryEngine.query({ query: input });
-        //console.log('PD Ansxer is :')
-        //console.log(response)
 
         return response;
     } else {

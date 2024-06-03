@@ -107,7 +107,7 @@ class MessageController {
     
                   // we send it to the openai api
                   let response = await newMessage(messageFormated);
-                  console.log('Response:', response);
+                  //console.log('Response:', response);
                   let messageUser = { role: 'user', content: message};
                   let messageBot = response.choices[0].message;
                   
@@ -115,7 +115,7 @@ class MessageController {
     
                   // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
                   if (discution === null) {
-                    console.log('No message found');
+                    //console.log('No message found');
                     await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
                     res.json({ status: 'success' });
                     return;
@@ -166,6 +166,11 @@ class MessageController {
               search(IPD, message)
           ]);
 
+          // console.log('AFTER PROMISE')
+          // console.log(imfData)
+          // console.log(twbData)
+          // console.log(privateData)
+
           switch (true) {
               case status.imf && status.twb:
                   messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}. Here is the data from the TWB API: ${twbData}`;
@@ -189,9 +194,6 @@ class MessageController {
           res.setHeader('Connection', 'keep-alive');
 
           await streamMessage(messageFormatted, chunk => {
-            
-            //console.log(typeof chunk)
-            //console.log( chunk)
             res.write(chunk);
           });
 
