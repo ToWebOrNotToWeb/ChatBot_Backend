@@ -1,6 +1,8 @@
 import { SimpleDirectoryReader, ChromaVectorStore, storageContextFromDefaults, VectorStoreIndex, SentenceSplitter, Settings, OpenAIEmbedding } from 'llamaindex';
 
+
 Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small')
+
 
 // ========================================================================================================
 // Embedd all the data and create the index
