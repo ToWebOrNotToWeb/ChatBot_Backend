@@ -36,58 +36,64 @@ async function getTWBData(countryCode, indicator) {
 }
 
 async function checkTWBapi(message, status) {
-    let twbNumber = [];
 
-    let CC_TWB = await findCountryCodeTWB(message);
-    CC_TWB = CC_TWB.replace(/\./g, '');
+    try {
+        let twbNumber = [];
 
-    if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
-    console.log('step three')
-        CC_TWB = convertToArray(CC_TWB);
+        let CC_TWB = await findCountryCodeTWB(message);
+        CC_TWB = CC_TWB.replace(/\./g, '');
 
-        let EI_TWB = await findDataCodeTWB(message);
+        if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
+        console.log('step three')
+            CC_TWB = convertToArray(CC_TWB);
 
-        let EI_TWBTest = EI_TWB.toString();
-        EI_TWBTest = EI_TWBTest.replace(/\./g, '');
+            let EI_TWB = await findDataCodeTWB(message);
 
-        if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
-        console.log('step foour')
-        console.log('TWB API is triggered');
+            let EI_TWBTest = EI_TWB.toString();
+            EI_TWBTest = EI_TWBTest.replace(/\./g, '');
 
-        let valuesTWB = EI_TWB.response;
-        valuesTWB = convertToArray(valuesTWB);
+            if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
+            console.log('step foour')
+            console.log('TWB API is triggered');
 
-        let keysTWB = EI_TWB.response2.response;
-        keysTWB = convertToArray(keysTWB);
+            let valuesTWB = EI_TWB.response;
+            valuesTWB = convertToArray(valuesTWB);
 
-        // We merge the key and the value to have a key value pair
-        let mergedTWB = keysTWB.map((key, index) => {
-            return { [key]: valuesTWB[index]};
-        });
+            let keysTWB = EI_TWB.response2.response;
+            keysTWB = convertToArray(keysTWB);
 
-        // We get the data from the TWB api based on the country code and the economical indicator find earlier
-        let dataTWB = await getTWBData(CC_TWB, keysTWB);
-        dataTWB.forEach(key => {
-            // use the merged array to change the key to the value in the data object
-            
-            for (let i = 0; i < mergedTWB.length; i++) {
-            let keyName = Object.keys(mergedTWB[i])[0];
-            let value = mergedTWB[i][keyName];
-            if (key[keyName] != undefined) {
-                key[value] = key[keyName];
-                delete key[keyName];
+            // We merge the key and the value to have a key value pair
+            let mergedTWB = keysTWB.map((key, index) => {
+                return { [key]: valuesTWB[index]};
+            });
+
+            // We get the data from the TWB api based on the country code and the economical indicator find earlier
+            let dataTWB = await getTWBData(CC_TWB, keysTWB);
+            dataTWB.forEach(key => {
+                // use the merged array to change the key to the value in the data object
+                
+                for (let i = 0; i < mergedTWB.length; i++) {
+                let keyName = Object.keys(mergedTWB[i])[0];
+                let value = mergedTWB[i][keyName];
+                if (key[keyName] != undefined) {
+                    key[value] = key[keyName];
+                    delete key[keyName];
+                }
+                }
+            })
+            // we format the data from the twb to be send to the openai api
+            dataTWB.forEach(element => {
+                twbNumber.push(element);
+            })
+            twbNumber = JSON.stringify(twbNumber);
+            status.twb = true;
             }
-            }
-        })
-        // we format the data from the twb to be send to the openai api
-        dataTWB.forEach(element => {
-            twbNumber.push(element);
-        })
-        twbNumber = JSON.stringify(twbNumber);
-        status.twb = true;
         }
+        return twbNumber;
+    } catch (e) {
+        console.error(e);
+        return "no data in the imf api, don't take it into acount"
     }
-    return twbNumber;
 }
 
 export { checkTWBapi };
