@@ -107,7 +107,7 @@ class MessageController {
     
                   // we send it to the openai api
                   let response = await newMessage(messageFormated);
-                  console.log('Response:', response);
+                  //console.log('Response:', response);
                   let messageUser = { role: 'user', content: message};
                   let messageBot = response.choices[0].message;
                   
@@ -115,7 +115,7 @@ class MessageController {
     
                   // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
                   if (discution === null) {
-                    console.log('No message found');
+                    //console.log('No message found');
                     await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
                     res.json({ status: 'success' });
                     return;
@@ -166,6 +166,11 @@ class MessageController {
               search(IPD, message)
           ]);
 
+          // console.log('AFTER PROMISE')
+          // console.log(imfData)
+          // console.log(twbData)
+          // console.log(privateData)
+
           switch (true) {
               case status.imf && status.twb:
                   messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}. Here is the data from the TWB API: ${twbData}`;
@@ -183,15 +188,13 @@ class MessageController {
                   messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}`;
                   break;
           }
-
+        
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
           res.setHeader('Connection', 'keep-alive');
 
           await streamMessage(messageFormatted, chunk => {
-            console.log(typeof chunk)
-            console.log(chunk)
-              res.write(chunk);
+            res.write(chunk);
           });
 
           res.end();
@@ -202,15 +205,49 @@ class MessageController {
       }
   }
     
+  async saveMessage(req, res) {
+
+    let token = req.headers.authorization.split(' ')[1];
+    let message = req.body.message;
+    let chatId = req.body.chatId;
+    console.log('Message:');
+    console.log(message);
+
+    await collectionUser.findOne({ token: token })
+    .then(async (user) => {
+
+        if (user === null) {
+
+            res.status(403).json({ error: 'Unauthorized' });
+            return;
+
+        };
+
+        try {
+          let messageUser = { role: 'user', content: message[0]};
+          let messageBot = { role: 'bot', content: message[1]};
+
+          let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+
+          if (!Array.isArray(discution.content)) {
+            discution.content = [discution.content]; 
+          }
+          discution.content.push(messageUser);
+          discution.content.push(messageBot);
+          await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
+          res.status(200).json({ id: chatId });
+          return;
+
+        } catch (error) {
+            console.error('Error during message save:', error);
+            res.status(500).json({ error: error.message });
+            return;
+        };
+      });
+
+  }
 
 }
 
-
-
-// io.on('connectMessage', (socket) => {
-              //   console.log('a user connected');
-              //   console.log(chunk);
-              //   socket.emit('streamMessage', chunk);
-              // });
 
 export default new MessageController();

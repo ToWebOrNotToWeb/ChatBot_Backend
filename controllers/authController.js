@@ -31,7 +31,7 @@ class AuthController {
       
             try {
       
-              await collectionUser.insertOne({ name, email, hashedPassword, token });
+              await collectionUser.insertOne({ name, email, hashedPassword, token, admin: false });
               res.json({ 'token': token });
       
             } catch (error) {
@@ -49,16 +49,15 @@ class AuthController {
     
             let email = req.body.email;
             let password = req.body.password;
-        
             // make sure the user exists
             let query = { email: email};
 
             let result = await collectionUser.findOne(query);
 
             if (result != null) {
-
                 // check the password
-                if (await comparePassword(password, result.hashedPassword)) {
+                let match =  await comparePassword(password, result.hashedPassword)
+                if (match) {
         
                     //generate a new token valid for one hours
                     let newToken = await generateJwtToken(email);

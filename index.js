@@ -11,18 +11,7 @@ import { verifyJwtToken } from './middelwares/middelwares.js'; // to verify the 
 
 import { OpenAI } from 'openai'; // ???
 
-import { Server } from 'socket.io';
-import http from 'http';
-
-// const stream = express();
-// const serverStream = http.createServer(stream);
-// const PORT = 8004;
-// const io = new Server(serverStream, {
-//     cors: {
-//         origin: '*',
-//         }
-// })
-
+import { deleteUserFixture, generateUserFixture } from './utils/fixtureUser.js'; // to generate the user fixtures
 // ========================================================================================================
 // load the environment variables
 dotenv.config();
@@ -49,8 +38,3 @@ app.listen(port, () => {
     console.log('Server app listening on port ' + port);
 });
 
-// serverStream.listen(PORT, () => {
-//     console.log('Server to stream is live on port 8004');
-// })
-
-//export default io;
