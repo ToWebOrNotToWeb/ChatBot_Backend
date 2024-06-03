@@ -183,15 +183,16 @@ class MessageController {
                   messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}`;
                   break;
           }
-
+        
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
           res.setHeader('Connection', 'keep-alive');
 
           await streamMessage(messageFormatted, chunk => {
-            console.log(typeof chunk)
-            console.log(chunk)
-              res.write(chunk);
+            
+            //console.log(typeof chunk)
+            //console.log( chunk)
+            res.write(chunk);
           });
 
           res.end();
@@ -202,15 +203,49 @@ class MessageController {
       }
   }
     
+  async saveMessage(req, res) {
+
+    let token = req.headers.authorization.split(' ')[1];
+    let message = req.body.message;
+    let chatId = req.body.chatId;
+    console.log('Message:');
+    console.log(message);
+
+    await collectionUser.findOne({ token: token })
+    .then(async (user) => {
+
+        if (user === null) {
+
+            res.status(403).json({ error: 'Unauthorized' });
+            return;
+
+        };
+
+        try {
+          let messageUser = { role: 'user', content: message[0]};
+          let messageBot = { role: 'bot', content: message[1]};
+
+          let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+
+          if (!Array.isArray(discution.content)) {
+            discution.content = [discution.content]; 
+          }
+          discution.content.push(messageUser);
+          discution.content.push(messageBot);
+          await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
+          res.status(200).json({ id: chatId });
+          return;
+
+        } catch (error) {
+            console.error('Error during message save:', error);
+            res.status(500).json({ error: error.message });
+            return;
+        };
+      });
+
+  }
 
 }
 
-
-
-// io.on('connectMessage', (socket) => {
-              //   console.log('a user connected');
-              //   console.log(chunk);
-              //   socket.emit('streamMessage', chunk);
-              // });
 
 export default new MessageController();

@@ -1,5 +1,4 @@
 import { MongoClient, ServerApiVersion } from 'mongodb'; // the database
-// import { ObjectId } from 'mongodb'; // used to convert the id to a mongo object id
 import * as dotenv from 'dotenv'; // to access the .env file
 
 // ========================================================================================================
@@ -35,13 +34,9 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
     //await client.close();
     // we let the client open
   };
 };
   
-//run().catch(console.dir);
-
-
 export { run, collectionUser, collectionChat, collectionMessage, collectionPicture };
