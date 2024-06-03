@@ -11,7 +11,7 @@ import { verifyJwtToken } from './middelwares/middelwares.js'; // to verify the 
 
 import { OpenAI } from 'openai'; // ???
 
-
+import { deleteUserFixture, generateUserFixture } from './utils/fixtureUser.js'; // to generate the user fixtures
 // ========================================================================================================
 // load the environment variables
 dotenv.config();

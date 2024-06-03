@@ -32,7 +32,7 @@ class DiscussionController {
                   // create a new message in the message collection
                   collectionMessage.insertOne({ chatsId: chat._id, content: message })
     
-                  res.json({ chatName: chatName });
+                  res.json({ chatName: chatName, chatId: chat._id});
                   return;
     
                 } catch (error) {
