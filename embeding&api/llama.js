@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { Document, VectorStoreIndex, Settings, OpenAIEmbedding  } from "llamaindex";
+import { Document, VectorStoreIndex, Settings, OpenAIEmbedding, SimpleDirectoryReader, ChromaVectorStore, storageContextFromDefaults, SentenceSplitter  } from "llamaindex";
 
 Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small')
 
@@ -23,19 +23,12 @@ const documentCCTWB = new Document({ text: essayCCTWB});
 const indexCCTWB = await VectorStoreIndex.fromDocuments([documentCCTWB]);
 
 const dataDCTWB = "apiData/IndicatorTWB";
-console.log('============================================')
-console.log('dataDCTWB => ' + dataDCTWB)
+
 const essayDCTWB = await fs.readdir(dataDCTWB, "utf-8");
-console.log('============================================')
-console.log('essayDCTWB => ' + essayDCTWB)
+
 const documentDCTWB = new Document({ text: essayDCTWB});
-console.log('============================================')
-console.log('documentDCTWB => ')
-console.log(documentDCTWB)
+
 const indexDCTWB = await VectorStoreIndex.fromDocuments([documentDCTWB]);
-console.log('============================================')
-console.log('indexDCTWB => ')
-console.log(indexDCTWB)
  
 // ========================================================================================================
 // ?????
@@ -85,7 +78,7 @@ async function findDataCodeIMF (input) {
     const queryEngine = indexDCIMF.asQueryEngine(); 
 
     const response = await queryEngine.query({
-        query: "Analyse the following string [ "+ input +" ]. Find multiple economical indicator that are relevent to the string. If you don't find any, answer 'no'.",
+        query: "Analyse the following string [ "+ input +" ]. Find TWO most relevent economical indicator. LIMIT YOUR SELF TO TWO economical indicator. no more than two. If you don't find any, answer 'no'.",
     });
     console.log('===============!!IMPORTANT!!===================')
    // console.log(response.response)
@@ -133,7 +126,7 @@ async function findDataCodeTWB (input) {
     const queryEngine = indexDCTWB.asQueryEngine(); 
 
     const response = await queryEngine.query({
-        query: "Analyse the following string [ "+ input +" ]. Try to find multiple economical indicator that are relevent to the string. If you don't find any, answer 'no'.",
+        query: "Analyse the following string [ "+ input +" ]. Find TWO most relevent economical indicator. LIMIT YOUR SELF TO TWO economical indicator. no more than two. If you don't find any, answer 'no'.",
     });
     console.log('===============!!IMPORTANT!!===================')
    // console.log(response.response)
@@ -158,5 +151,8 @@ async function findDataCodeTWB (input) {
 
     
 }
+// let test = await findDataCodeTWB('I sell shoes on line in italy and i want to export my business to germany ')
+// console.log('$$$$$$$$$$$$$$$$$$$ test Résulte $$$$$$$$$$$$$$$$$$$$$')
+// console.log(test)
 
 export { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB } ;

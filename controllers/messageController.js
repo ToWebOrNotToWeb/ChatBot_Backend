@@ -166,33 +166,33 @@ class MessageController {
               search(IPD, message)
           ]);
 
-          // console.log('AFTER PROMISE')
-          // console.log(imfData)
-          // console.log(twbData)
+          console.log('AFTER PROMISE')
+          console.log(imfData)
+          console.log(twbData)
           console.log(privateData)
 
           switch (true) {
               case status.imf && status.twb:
-                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}. Here is the data from the TWB API: ${twbData}`;
+                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
                   break;
 
               case status.twb:
-                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the TWB API: ${twbData}`;
+                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, TWB API data: ${twbData}.`;
                   break;
 
               case status.imf:
-                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}. Here is the data from the IMF API: ${imfData}`;
+                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, IMF API data: ${imfData}.`;
                   break;
 
               default:
-                  messageFormatted = `You are a worldwide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input: ${message}. Also here is the history of the previous messages between you and the user: ${previousMessage}. To answer the input, you can use the following resources: ${privateData}`;
+                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}.`;
                   break;
           }
         
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
           res.setHeader('Connection', 'keep-alive');
-
+          console.log('Message formatted:', messageFormatted);
           await streamMessage(messageFormatted, chunk => {
             res.write(chunk);
           });

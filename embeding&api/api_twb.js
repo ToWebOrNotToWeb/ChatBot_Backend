@@ -7,7 +7,8 @@ const baseUrl = "https://api.worldbank.org/v2";
 // function to fetch data from the World Bank api 
 async function getTWBData(countryCode, indicator) {
     console.log('TWB api is trigered')
-
+    console.log('countryCode: ' + countryCode)
+    console.log('indicator: ' + indicator)
     try {
         let promises = [];
 

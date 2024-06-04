@@ -41,7 +41,7 @@ async function search(indexPromise, input) {
     if (index && index.asQueryEngine) {
         console.log('Searching inside private data')
         const queryEngine = index.asQueryEngine();
-        const response = await queryEngine.query({ query: input });
+        const response = await queryEngine.query({ query: 'Find relevent information that could help answer this input : ' + input });
 
         return response;
     } else {
