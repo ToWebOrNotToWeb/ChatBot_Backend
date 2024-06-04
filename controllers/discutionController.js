@@ -80,6 +80,37 @@ class DiscussionController {
         
     }
 
+    async update (req, res) {
+        
+          let token = req.headers.authorization.split(' ')[1];
+          let chatName = req.body.chatName;
+          let chatId = req.body.chatId;
+          console.log('location 1')
+          console.log(chatName)
+      
+          await collectionUser.findOne({ token: token })
+          .then(async (user) => {
+
+              if (user === null) {
+
+                  res.status(403).json({ error: 'Unauthorized' });
+                  return;
+
+              };
+
+              try {
+                  await collectionChat.updateOne({ "_id": new ObjectId(chatId) }, { $set: { chatName: chatName } });
+                  res.json({ status: 'success' });
+                  return;
+
+              } catch (error) {
+                  console.error('Error during thread creation:', error);
+                  res.status(500).json({ error: error.message });
+                  return;
+              };
+          });
+    }
+
     async delete (req, res) {
 
         let token = req.headers.authorization.split(' ')[1];

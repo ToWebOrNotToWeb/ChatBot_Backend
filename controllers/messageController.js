@@ -169,7 +169,7 @@ class MessageController {
           // console.log('AFTER PROMISE')
           // console.log(imfData)
           // console.log(twbData)
-          // console.log(privateData)
+          console.log(privateData)
 
           switch (true) {
               case status.imf && status.twb:
