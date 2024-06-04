@@ -34,6 +34,7 @@ router.post('/user/deleteProfile', UserController.deleteProfile);
 
 router.post('/api/discution/new', DiscussionController.new);
 router.get('/api/discution/get', DiscussionController.get);
+router.post('/api/discution/update', DiscussionController.update);
 router.post('/api/discution/delete', DiscussionController.delete);
 
 /* Message route */
