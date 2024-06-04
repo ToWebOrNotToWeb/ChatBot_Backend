@@ -7,7 +7,8 @@ const baseUrl = "https://api.worldbank.org/v2";
 // function to fetch data from the World Bank api 
 async function getTWBData(countryCode, indicator) {
     console.log('TWB api is trigered')
-
+    console.log('countryCode: ' + countryCode)
+    console.log('indicator: ' + indicator)
     try {
         let promises = [];
 
@@ -44,7 +45,7 @@ async function checkTWBapi(message, status) {
         CC_TWB = CC_TWB.replace(/\./g, '');
 
         if (CC_TWB.trim() != 'No' && CC_TWB.trim() != 'no') {
-        console.log('step three')
+        console.log('Btoh are true')
             CC_TWB = convertToArray(CC_TWB);
 
             let EI_TWB = await findDataCodeTWB(message);
@@ -54,7 +55,7 @@ async function checkTWBapi(message, status) {
 
             if (EI_TWBTest.trim() != 'No' && EI_TWBTest.trim() != 'no') {
             //console.log('step foour')
-            //console.log('TWB API is triggered');
+            console.log('TWB API is triggered');
 
             let valuesTWB = EI_TWB.response;
             valuesTWB = convertToArray(valuesTWB);
@@ -69,6 +70,8 @@ async function checkTWBapi(message, status) {
 
             // We get the data from the TWB api based on the country code and the economical indicator find earlier
             let dataTWB = await getTWBData(CC_TWB, keysTWB);
+            console.log('dataTWB: ');
+            console.table(dataTWB);
             dataTWB.forEach(key => {
                 // use the merged array to change the key to the value in the data object
                 

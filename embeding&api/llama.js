@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { Document, VectorStoreIndex, Settings, OpenAIEmbedding  } from "llamaindex";
+import { Document, VectorStoreIndex, Settings, OpenAIEmbedding, SimpleDirectoryReader, ChromaVectorStore, storageContextFromDefaults, SentenceSplitter  } from "llamaindex";
 
 Settings.embed_model = new OpenAIEmbedding('text-embedding-3-small')
 
@@ -23,8 +23,11 @@ const documentCCTWB = new Document({ text: essayCCTWB});
 const indexCCTWB = await VectorStoreIndex.fromDocuments([documentCCTWB]);
 
 const dataDCTWB = "apiData/IndicatorTWB";
+
 const essayDCTWB = await fs.readdir(dataDCTWB, "utf-8");
+
 const documentDCTWB = new Document({ text: essayDCTWB});
+
 const indexDCTWB = await VectorStoreIndex.fromDocuments([documentDCTWB]);
  
 // ========================================================================================================
@@ -75,7 +78,7 @@ async function findDataCodeIMF (input) {
     const queryEngine = indexDCIMF.asQueryEngine(); 
 
     const response = await queryEngine.query({
-        query: "Analyse the following string [ "+ input +" ]. Find multiple economical indicator that are relevent to the string. If you don't find any, answer 'no'.",
+        query: "Analyse the following string [ "+ input +" ]. Find TWO most relevent economical indicator. LIMIT YOUR SELF TO TWO economical indicator. no more than two. If you don't find any, answer 'no'.",
     });
     console.log('===============!!IMPORTANT!!===================')
    // console.log(response.response)
@@ -84,7 +87,7 @@ async function findDataCodeIMF (input) {
     //console.log('post modification')
     //console.log(response.response)
     if (response.response != 'no'.trim() && response.response != 'No'.trim() ) {
-        console.log('if is read')
+        console.log('if is  line')
         const response2 = await queryEngine.query({
             query: "Get the data codes for the following labels [ "+ response.response +" ].  Only the data code. Don't include the label.",
         });
@@ -104,13 +107,13 @@ async function findDataCodeIMF (input) {
 // ========================================================================================================
 // Find the country code for The World Bank (TWB)
 async function findCountryCodeTWB (input) {
-    //console.log('debug twb api')
+    console.log('debug twb api')
     const queryEngine = indexCCTWB.asQueryEngine(); 
     //console.log('cl de la function =>' + input)
     const response = await queryEngine.query({
         query: "If the following string [ "+ input +" ] talk, state, utter, pronouce or mensions one or more country, find all the country code in the document. Else answer 'no'. Watch out Theire can be multiple country.",
     });
-   // console.log('debug resp' + response.response)
+   console.log('debug resp' + response.response)
     return response.response
 
 };
@@ -118,12 +121,12 @@ async function findCountryCodeTWB (input) {
 // ========================================================================================================
 // Find the economical indicator for The World Bank (TWB)
 async function findDataCodeTWB (input) {
-    console.log('Indicator search is triger fro TWB')
+    console.log('Indicator search is triger for TWB')
     
     const queryEngine = indexDCTWB.asQueryEngine(); 
 
     const response = await queryEngine.query({
-        query: "Analyse the following string [ "+ input +" ]. Find multiple economical indicator that are relevent to the string. If you don't find any, answer 'no'.",
+        query: "Analyse the following string [ "+ input +" ]. Find TWO most relevent economical indicator. LIMIT YOUR SELF TO TWO economical indicator. no more than two. If you don't find any, answer 'no'.",
     });
     console.log('===============!!IMPORTANT!!===================')
    // console.log(response.response)
@@ -132,7 +135,7 @@ async function findDataCodeTWB (input) {
    // console.log('post modification')
     console.log(response.response)
     if (response.response != 'no'.trim() && response.response != 'No'.trim() ) {
-        console.log('if is read')
+        console.log('if is read 135')
         const response2 = await queryEngine.query({
             query: "Get the data codes for the following labels [ "+ response.response +" ].  Only the data code. Don't include the label.",
         });
@@ -142,11 +145,14 @@ async function findDataCodeTWB (input) {
         // console.log({response: response.response, response2: response2})
         return {response: response.response, response2: response2}
     } else {
-        console.log('else is read')
+        console.log('else is read 145')
         return response.response
     }
 
     
 }
+// let test = await findDataCodeTWB('I sell shoes on line in italy and i want to export my business to germany ')
+// console.log('$$$$$$$$$$$$$$$$$$$ test Résulte $$$$$$$$$$$$$$$$$$$$$')
+// console.log(test)
 
 export { findCountryCodeIMF, findDataCodeIMF, findCountryCodeTWB, findDataCodeTWB } ;

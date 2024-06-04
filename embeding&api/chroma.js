@@ -25,7 +25,7 @@ async function embeddData() {
         console.log("Embedding documents and adding to index");
         const index = await VectorStoreIndex.fromDocuments(docs, {text_splitter: textSplitter} ,{ storageContext: ctx });
 
-        console.log("Index created, the serveur and chromaDb are running fine and ready to use !");
+        console.log(":tada: Index created, the serveur and chromaDb are running fine and ready to use !");
         return index;
 
     } catch (e) {
@@ -41,7 +41,7 @@ async function search(indexPromise, input) {
     if (index && index.asQueryEngine) {
         console.log('Searching inside private data')
         const queryEngine = index.asQueryEngine();
-        const response = await queryEngine.query({ query: input });
+        const response = await queryEngine.query({ query: 'Find relevent information that could help answer this input : ' + input });
 
         return response;
     } else {
