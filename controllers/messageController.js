@@ -173,19 +173,19 @@ class MessageController {
 
           switch (true) {
               case status.imf && status.twb:
-                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
+                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
                   break;
 
               case status.twb:
-                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, TWB API data: ${twbData}.`;
+                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
                   break;
 
               case status.imf:
-                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}, IMF API data: ${imfData}.`;
+                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
                   break;
 
               default:
-                  messageFormatted = `You are a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Please answer the user's query: ${message}. Additionally, here is the history of previous messages between you and the user: ${previousMessage}. Use the following resources to craft your response: ${privateData}.`;
+                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
                   break;
           }
         
