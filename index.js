@@ -20,6 +20,8 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 run().catch(console.dir);
 
+//deleteUserFixture();
+generateUserFixture();
 
 // ========================================================================================================
 // create the express app

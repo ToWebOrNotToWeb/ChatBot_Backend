@@ -6,23 +6,31 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 async function deleteUserFixture() {
-    for (let i = 0; i < 5; i++) {
-        await collectionUser.deleteMany({name: `user${i}`})
+    try {
+        for (let i = 0; i < 5; i++) {
+            await collectionUser.deleteMany({name: `user${i}`})
+        }
+    } catch (error) {
+        console.error('Error during user deletion:', error);
     }
 }
 
 async function generateUserFixture() {
-    let all = []
-    for (let i = 0; i < 5; i++) {
-        let name = `user${i}`;
-        let email = `user${i}@gmail.com`;
-        let password = process.env.FIXTURES_PW+`${i}`;        
-        const hashedPassword = await hashPassword(password);
-        all.push({'@': email, 'PW': password, 'HASH': hashedPassword})
-        let token = await generateJwtToken(email);
-        await collectionUser.insertOne({ name, email, hashedPassword, token, admin: false});
+    try {
+        let all = []
+        for (let i = 0; i < 5; i++) {
+            let name = `user${i}`;
+            let email = `user${i}@gmail.com`;
+            let password = process.env.FIXTURES_PW+`${i}`;        
+            const hashedPassword = await hashPassword(password);
+            all.push({'@': email, 'PW': password, 'HASH': hashedPassword})
+            let token = await generateJwtToken(email);
+            await collectionUser.insertOne({ name, email, hashedPassword, token, admin: false});
+        }
+        console.table(all)
+    } catch (error) {
+        console.error('Error during user creation:', error);
     }
-    console.table(all)
 }
 
 export { deleteUserFixture, generateUserFixture };

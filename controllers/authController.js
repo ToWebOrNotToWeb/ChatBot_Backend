@@ -53,10 +53,11 @@ class AuthController {
             let query = { email: email};
 
             let result = await collectionUser.findOne(query);
-
+            //console.log('User found:', result);
             if (result != null) {
                 // check the password
                 let match =  await comparePassword(password, result.hashedPassword)
+                //console.log('Password match:', match);
                 if (match) {
         
                     //generate a new token valid for one hours
@@ -69,7 +70,7 @@ class AuthController {
         
                 } else {
         
-                    console.log('Invalid credentials');
+                    //console.log('Invalid credentials');
                     res.status(401).json({ error: 'Invalid credentials' });
                     return;
                 }
