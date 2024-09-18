@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
 import { newMessage, streamMessage } from '../embeding&api/api_openai.js';
 import { searchPrivateData, libChap, libCountry } from '../databases/pineconeDb.js';
+import { DiscussionController } from './discussionController.js';
 
 
 class MessageController {
@@ -72,7 +73,7 @@ class MessageController {
                   if (discution === null) {
                     //console.log('No message found');
                     await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                    res.json({ status: 'success' });
+                    res.status(200).json({ status: 'success' });
                     return;
                   } else {
                     // Insert the user input and the bot response in the chat
@@ -107,6 +108,10 @@ class MessageController {
               res.status(403).json({ error: 'Unauthorized' });
               return;
           }
+ 
+          if (chatId === null) {
+
+          }
 
           let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
           previousMessage = previousMessage ? previousMessage.content : "No previous messages.";
@@ -131,17 +136,17 @@ class MessageController {
           });
 
           //console.log('Private data:', privateData);
-          messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Always answer in the langages of the inquiry. Review the previous conversation history with the user for additional context: ${context}. Becarefull theire might not always be historic to review but it's okay. Utilize the available resources for your response: ${privateData}`;
+          messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. You will answer in the language used by the user. Review the previous conversation history with the user for additional context: ${context}. Becarefull theire might not always be historic to review but it's okay. Utilize the available resources for your response: ${privateData}. You need to give a human like answer. The user needs to have the feeling he is talking to another human, be professional and polite.`;
 
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
+          res.status(200).setHeader('Content-Type', 'text/event-stream');
+          res.status(200).setHeader('Cache-Control', 'no-cache');
+          res.status(200).setHeader('Connection', 'keep-alive');
           //console.log('Message formatted:', messageFormatted);
           await streamMessage(messageFormatted, chunk => {
-            res.write(chunk);
+            res.status(200).write(chunk);
           });
 
-          res.end();
+          res.status(200).end();
 
       } catch (error) {
           console.error('Error during message creation:', error);
@@ -150,7 +155,8 @@ class MessageController {
   }
     
   async saveMessage(req, res) {
-
+    //console.log('Save message');
+    //console.log(req.body);
     let token = req.headers.authorization.split(' ')[1];
     let message = req.body.message;
     let chatId = req.body.chatId;
@@ -170,9 +176,11 @@ class MessageController {
         try {
           let messageUser = { role: 'user', content: message[0]};
           let messageBot = { role: 'bot', content: message[1]};
-
+          console.log('Chat ID:');
+          console.log(chatId);
           let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
+          console.log('Discussion: ');
+          console.log(discution);
           if (!Array.isArray(discution.content)) {
             discution.content = [discution.content]; 
           }
