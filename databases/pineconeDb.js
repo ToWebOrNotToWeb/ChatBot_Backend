@@ -8,7 +8,8 @@ const openai = new OpenAI();
 
 const pc = new Pinecone({
 
-    apiKey: process.env.PINECONE_API_KEY
+    apiKey: process.env.PINECONE_API_KEY,
+    fetchApi: fetch
 
 });
 
