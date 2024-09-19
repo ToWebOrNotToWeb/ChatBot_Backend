@@ -1,13 +1,10 @@
 import { ObjectId } from 'mongodb';
-import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
-import { checkIMFapi } from '../embeding&api/api_imf.js';
-import { checkTWBapi } from '../embeding&api/api_twb.js';
+import { collectionMessage, collectionUser, collectionChat } from '../databases/mongoDb.js';
 import { newMessage, streamMessage } from '../embeding&api/api_openai.js';
-import indexPrivateData from '../utils/dataIndex.js'
-import { search } from '../embeding&api/chroma.js';
+import { searchPrivateData, libChap, libCountry } from '../databases/pineconeDb.js';
+import { type } from 'os';
 
 
-const IPD = indexPrivateData;
 class MessageController {
 
     async get (req, res) {
@@ -42,10 +39,6 @@ class MessageController {
         let token = req.headers.authorization.split(' ')[1];
         let message = req.body.message;
         let chatId = req.body.chatId;
-        let status = {
-          "twb": false,
-          "imf": false
-        };
         
         await collectionUser.findOne({ token: token })
             .then(async (user) => {
@@ -65,45 +58,8 @@ class MessageController {
                   previousMessage = JSON.stringify(previousMessage.content);
                   let messageFormated = '';
     
-  
-                  let imfData = await checkIMFapi(message, status);
-                  let twbData = await checkTWBapi(message, status);
-                  let privateData = await search(IPD, message)
-
-                  Promise.all([
-                    imfData,
-                    twbData,
-                    privateData
-                  ]).then((values) => {
-                    imfData = values[0];
-                    twbData = values[1];
-                    privateData = values[2];
-                  });
-
-                  console.log('Status:', status);
-                  //console.log(privateData)
-                  switch (true) { 
-    
-                    case status.imf === true && status.twb === true:
-                      console.log('IMF and TWB APIs are triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfData + ". Here is the data from the TWB API :" + twbData;
-                      break;
-                      
-                    case status.twb === true && status.imf === false:
-                      console.log('TWB API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the TWB API :" + twbData;
-                      break;
-                    
-                    case status.imf === true && status.twb === false:
-                      console.log('IMF API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData + ". Here is the data from the IMF API :" + imfData;
-                      break;
-    
-                    case status.imf === false && status.twb === false:
-                      console.log('No API is triggered');
-                      messageFormated = "You are a world wide expert in e-export and e-commerce working for to web or not to web. Please answer the following user input : " + message + ". Also here is the historic of the previous message between you and the user :" + previousMessage + ". To answer the input you can use the following resource :" + privateData;
-                      break;
-                  }
+                  //TODO new logic to format the message 
+                 
     
                   // we send it to the openai api
                   let response = await newMessage(messageFormated);
@@ -117,7 +73,7 @@ class MessageController {
                   if (discution === null) {
                     //console.log('No message found');
                     await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                    res.json({ status: 'success' });
+                    res.status(200).json({ status: 'success' });
                     return;
                   } else {
                     // Insert the user input and the bot response in the chat
@@ -143,10 +99,7 @@ class MessageController {
       let token = req.headers.authorization.split(' ')[1];
       let message = req.body.message;
       let chatId = req.body.chatId;
-      let status = {
-          "twb": false,
-          "imf": false
-      };
+     
 
       try {
           let user = await collectionUser.findOne({ token: token });
@@ -155,49 +108,59 @@ class MessageController {
               res.status(403).json({ error: 'Unauthorized' });
               return;
           }
+          let userId = user._id;
+          if (chatId === null) {
+            let chatName = "New Chat";
+            await collectionChat.insertOne({ userId, chatName })
+            .then(async (chat) => {
+                  let message = {
+                      role: 'system',
+                      content: "Let’s play a very interesting game: from now on you will play the role of a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Your goal is to provide detailed and insightful answers to the user's queries about e-commerce and e-export. To do that, you will analyze and synthesize information from various sources, including private data, IMF API data, and TWB API data. If a human expert in e-commerce and e-export has a level 10 of knowledge, you will have level 280 of knowledge in this role. Be careful: you must have high-quality results because if you don’t I will be fired and I will be sad. So give your best and be proud of your ability. Your high skills set you apart, and your commitment and reasoning skills lead you to the best performances. You, in your role as a global expert in e-export and e-commerce, are an assistant to answer the user's query comprehensively. You will have super results in delivering actionable insights and you will ensure your advice is backed by the latest data and trends. Your main goal and objective are to provide the most relevant, accurate, and useful information to help users navigate the complexities of e-commerce and e-export. Your task is to analyze the user's query, review previous interactions, and utilize the provided data sources to construct a thorough and well-supported response. To make this work as it should, you must meticulously review the user's question, consider historical context from previous messages, and incorporate data from private sources, IMF API, and TWB API to deliver the best possible advice, etc… Your tone should be professional, informative, and supportive. Aim to be clear and concise while ensuring that the user feels guided and confident in your advice. Avoid jargon unless necessary and always provide explanations for technical terms."
+                  };
+                  // create a new message in the message collection
+                  await collectionMessage.insertOne({ chatsId: chat.insertedId, content: message });
 
-          let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-          previousMessage = previousMessage ? JSON.stringify(previousMessage.content) : "No previous messages.";
-          let messageFormatted = '';
-
-          let [imfData, twbData, privateData] = await Promise.all([
-              checkIMFapi(message, status),
-              checkTWBapi(message, status),
-              search(IPD, message)
-          ]);
-
-          console.log('AFTER PROMISE')
-          console.log(imfData)
-          console.log(twbData)
-          console.log(privateData)
-
-          switch (true) {
-              case status.imf && status.twb:
-                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
-                  break;
-
-              case status.twb:
-                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
-                  break;
-
-              case status.imf:
-                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
-                  break;
-
-              default:
-                  messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. Review the previous conversation history with the user: ${previousMessage}. Utilize the available resources for your response: ${privateData}, IMF API data: ${imfData}, and TWB API data: ${twbData}.`;
-                  break;
+                  chatId = chat.insertedId;
+            });
           }
-        
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
-          console.log('Message formatted:', messageFormatted);
-          await streamMessage(messageFormatted, chunk => {
-            res.write(chunk);
+          console.log('Chat ID:', chatId);
+          let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
+          previousMessage = previousMessage ? previousMessage.content : "No previous messages.";
+          //console.log('Previous message:');
+          //console.log(previousMessage);
+          let messageFormatted = '';
+          let context = "";
+          if (previousMessage.length >= 2) {
+              context = previousMessage[previousMessage.length - 2].content + ' ' + previousMessage[previousMessage.length - 1].content;
+          } else if (previousMessage.length === 1) {
+              context = previousMessage[0].content;
+          };
+         // console.log('Context:', context);
+
+          const privateData = [];
+          libChap.forEach(async (lib) => {
+            lib.chapter.forEach(async (chap) => {
+                let response = await searchPrivateData(message, lib.name, chap);
+                privateData.push(response);
+                // console.log('Private data of chap :' + chap + 'is :' , privateData);
+            });
           });
 
-          res.end();
+          //console.log('Private data:', privateData);
+          messageFormatted = `As a global expert in e-commerce and e-export at 'To Web or Not To Web,' respond to the user's inquiry: ${message}. You will answer in the language used by the user. Review the previous conversation history with the user for additional context: ${context}. Becarefull theire might not always be historic to review but it's okay. Utilize the available resources for your response: ${privateData}. You need to give a human like answer. The user needs to have the feeling he is talking to another human, be professional and polite.`;
+
+          res.status(200).setHeader('Content-Type', 'text/event-stream');
+          res.status(200).setHeader('Cache-Control', 'no-cache');
+          res.status(200).setHeader('Connection', 'keep-alive');
+          //console.log('Message formatted:', messageFormatted);
+          await streamMessage(messageFormatted, chunk => {
+            res.status(200).write(chunk);
+          });
+          chatId = chatId.toString();
+          console.log(typeof chatId);
+          console.log('Send END');
+          res.status(200).end(chatId);
+          
 
       } catch (error) {
           console.error('Error during message creation:', error);
@@ -206,12 +169,13 @@ class MessageController {
   }
     
   async saveMessage(req, res) {
-
+    //console.log('Save message');
+    //console.log(req.body);
     let token = req.headers.authorization.split(' ')[1];
     let message = req.body.message;
     let chatId = req.body.chatId;
-    console.log('Message:');
-    console.log(message);
+    //console.log('Message to save:');
+    //console.log(message);
 
     await collectionUser.findOne({ token: token })
     .then(async (user) => {
@@ -226,9 +190,11 @@ class MessageController {
         try {
           let messageUser = { role: 'user', content: message[0]};
           let messageBot = { role: 'bot', content: message[1]};
-
+          //console.log('Chat ID:');
+          //console.log(chatId);
           let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-
+          //console.log('Discussion: ');
+          //console.log(discution);
           if (!Array.isArray(discution.content)) {
             discution.content = [discution.content]; 
           }

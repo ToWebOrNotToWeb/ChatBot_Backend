@@ -13,6 +13,7 @@
   "author": "pierre-louis sans",
   "license": "ISC",
   "dependencies": {
+    "@pinecone-database/pinecone": "^3.0.2",
     "bcrypt": "^5.1.1",
     "chromadb": "^1.8.1",
     "cors": "^2.8.5",
@@ -20,6 +21,7 @@
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
+    "image-to-base64": "^2.2.0",
     "jsonwebtoken": "^9.0.2",
     "llama": "^2.1.13",
     "llama-node": "^0.1.6",

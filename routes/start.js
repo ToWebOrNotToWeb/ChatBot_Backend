@@ -26,16 +26,17 @@ router.post('/auth/login', AuthController.login);
  
 router.get('/user/profile', UserController.showProfile);
 router.get('/user/picture', UserController.showPicture);
-router.post('/user/profile', UserController.updateProfile);
+router.put('/user/profile', UserController.updateProfile);
 router.post('/user/picture', UserController.updatePicture);
-router.post('/user/deleteProfile', UserController.deleteProfile);
+router.delete('/user/deleteProfile', UserController.deleteProfile);
+router.delete('/user/deletePicture', UserController.deletePicture);
 
 /* Discution route */
 
 router.post('/api/discution/new', DiscussionController.new);
 router.get('/api/discution/get', DiscussionController.get);
-router.post('/api/discution/update', DiscussionController.update);
-router.post('/api/discution/delete', DiscussionController.delete);
+router.put('/api/discution/update', DiscussionController.update);
+router.delete('/api/discution/delete', DiscussionController.delete);
 
 /* Message route */
 
