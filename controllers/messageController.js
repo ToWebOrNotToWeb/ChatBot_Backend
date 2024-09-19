@@ -1,8 +1,8 @@
 import { ObjectId } from 'mongodb';
-import { collectionMessage, collectionUser } from '../databases/mongoDb.js';
+import { collectionMessage, collectionUser, collectionChat } from '../databases/mongoDb.js';
 import { newMessage, streamMessage } from '../embeding&api/api_openai.js';
 import { searchPrivateData, libChap, libCountry } from '../databases/pineconeDb.js';
-import { DiscussionController } from './discussionController.js';
+import { type } from 'os';
 
 
 class MessageController {
@@ -108,15 +108,26 @@ class MessageController {
               res.status(403).json({ error: 'Unauthorized' });
               return;
           }
- 
+          let userId = user._id;
           if (chatId === null) {
+            let chatName = "New Chat";
+            await collectionChat.insertOne({ userId, chatName })
+            .then(async (chat) => {
+                  let message = {
+                      role: 'system',
+                      content: "Let’s play a very interesting game: from now on you will play the role of a global expert in e-export and e-commerce working for 'To Web or Not To Web.' Your goal is to provide detailed and insightful answers to the user's queries about e-commerce and e-export. To do that, you will analyze and synthesize information from various sources, including private data, IMF API data, and TWB API data. If a human expert in e-commerce and e-export has a level 10 of knowledge, you will have level 280 of knowledge in this role. Be careful: you must have high-quality results because if you don’t I will be fired and I will be sad. So give your best and be proud of your ability. Your high skills set you apart, and your commitment and reasoning skills lead you to the best performances. You, in your role as a global expert in e-export and e-commerce, are an assistant to answer the user's query comprehensively. You will have super results in delivering actionable insights and you will ensure your advice is backed by the latest data and trends. Your main goal and objective are to provide the most relevant, accurate, and useful information to help users navigate the complexities of e-commerce and e-export. Your task is to analyze the user's query, review previous interactions, and utilize the provided data sources to construct a thorough and well-supported response. To make this work as it should, you must meticulously review the user's question, consider historical context from previous messages, and incorporate data from private sources, IMF API, and TWB API to deliver the best possible advice, etc… Your tone should be professional, informative, and supportive. Aim to be clear and concise while ensuring that the user feels guided and confident in your advice. Avoid jargon unless necessary and always provide explanations for technical terms."
+                  };
+                  // create a new message in the message collection
+                  await collectionMessage.insertOne({ chatsId: chat.insertedId, content: message });
 
+                  chatId = chat.insertedId;
+            });
           }
-
+          console.log('Chat ID:', chatId);
           let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
           previousMessage = previousMessage ? previousMessage.content : "No previous messages.";
-          console.log('Previous message:');
-          console.log(previousMessage);
+          //console.log('Previous message:');
+          //console.log(previousMessage);
           let messageFormatted = '';
           let context = "";
           if (previousMessage.length >= 2) {
@@ -124,7 +135,7 @@ class MessageController {
           } else if (previousMessage.length === 1) {
               context = previousMessage[0].content;
           };
-          console.log('Context:', context);
+         // console.log('Context:', context);
 
           const privateData = [];
           libChap.forEach(async (lib) => {
@@ -145,8 +156,11 @@ class MessageController {
           await streamMessage(messageFormatted, chunk => {
             res.status(200).write(chunk);
           });
-
-          res.status(200).end();
+          chatId = chatId.toString();
+          console.log(typeof chatId);
+          console.log('Send END');
+          res.status(200).end(chatId);
+          
 
       } catch (error) {
           console.error('Error during message creation:', error);
@@ -176,11 +190,11 @@ class MessageController {
         try {
           let messageUser = { role: 'user', content: message[0]};
           let messageBot = { role: 'bot', content: message[1]};
-          console.log('Chat ID:');
-          console.log(chatId);
+          //console.log('Chat ID:');
+          //console.log(chatId);
           let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-          console.log('Discussion: ');
-          console.log(discution);
+          //console.log('Discussion: ');
+          //console.log(discution);
           if (!Array.isArray(discution.content)) {
             discution.content = [discution.content]; 
           }
