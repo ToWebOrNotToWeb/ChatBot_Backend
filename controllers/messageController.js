@@ -2,12 +2,12 @@ import { ObjectId } from 'mongodb';
 import { collectionMessage, collectionUser, collectionChat } from '../databases/mongoDb.js';
 import { newMessage, streamMessage } from '../embeding&api/api_openai.js';
 import { searchPrivateData, libChap, libCountry } from '../databases/pineconeDb.js';
-import { type } from 'os';
+
 
 
 class MessageController {
 
-    async get (req, res) {
+  async post (req, res) {
   
         let token = req.headers.authorization.split(' ')[1];
         let chatId = req.body.chatId;
@@ -24,7 +24,7 @@ class MessageController {
                 try {
                   let messages = await collectionMessage.findOne({chatsId: new ObjectId(chatId)})
     
-                  res.json({ messages });
+                  res.status(200).json({ messages });
                   return;
                 } catch (error) {
                   console.error('Error during message recuperation:', error);
@@ -32,70 +32,9 @@ class MessageController {
                   return;
                 };
             });
-    }
+  }
 
-    async new (req, res) {
-        
-        let token = req.headers.authorization.split(' ')[1];
-        let message = req.body.message;
-        let chatId = req.body.chatId;
-        
-        await collectionUser.findOne({ token: token })
-            .then(async (user) => {
-    
-                if (user === null) {
-    
-                    res.status(403).json({ error: 'Unauthorized' });
-                    return;
-    
-                };
-    
-                try {
-    
-                  // We get all the previous message in the chat
-                  let previousMessage = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-                  //console.log('Previous message:', previousMessage);
-                  previousMessage = JSON.stringify(previousMessage.content);
-                  let messageFormated = '';
-    
-                  //TODO new logic to format the message 
-                 
-    
-                  // we send it to the openai api
-                  let response = await newMessage(messageFormated);
-                  //console.log('Response:', response);
-                  let messageUser = { role: 'user', content: message};
-                  let messageBot = response.choices[0].message;
-                  
-                  let discution = await collectionMessage.findOne({ chatsId: new ObjectId(chatId) });
-    
-                  // if the chat is new we create it (shouldn't happen anymore since we make sure theire is a chat before sending a message but just in case we keep it)
-                  if (discution === null) {
-                    //console.log('No message found');
-                    await collectionMessage.insertOne({ chatsId: chatId, content: response.choices[0].message });
-                    res.status(200).json({ status: 'success' });
-                    return;
-                  } else {
-                    // Insert the user input and the bot response in the chat
-                    if (!Array.isArray(discution.content)) {
-                      discution.content = [discution.content]; 
-                    }
-                    discution.content.push(messageUser);
-                    discution.content.push(messageBot);
-                    await collectionMessage.updateOne({ chatsId: new ObjectId(chatId) }, { $set: { content: discution.content } });
-                    res.status(200).json({ id: chatId });
-                    return;
-                  } 
-                   
-                } catch (error) {
-                  console.error('Error during message creation:', error);
-                  res.status(500).json({ error: error.message });
-                  return;
-                };
-            });
-    }
-
-    async pipeline(req, res) {
+  async pipeline(req, res) {
       let token = req.headers.authorization.split(' ')[1];
       let message = req.body.message;
       let chatId = req.body.chatId;

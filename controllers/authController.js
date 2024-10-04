@@ -6,8 +6,8 @@ class AuthController {
 
     async register (req, res) {
         //console.log('Proceding to register :' + req.body.name)
-        res.json({'error' : 'We are not accepting new users at the moment. Please try again later.'});
-        return;
+        //res.json({'error' : 'We are not accepting new users at the moment. Please try again later.'});
+        //return;
           let name = req.body.name;
           let email = req.body.email;
           let password = req.body.password;

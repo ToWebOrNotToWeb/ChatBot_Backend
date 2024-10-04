@@ -40,8 +40,7 @@ router.delete('/api/discution/delete', DiscussionController.delete);
 
 /* Message route */
 
-router.post('/api/message/get', MessageController.get);
-router.post('/api/message/new', MessageController.new);
+router.post('/api/message/post', MessageController.post);
 router.post('/api/message/pipeline', MessageController.pipeline);
 router.post('/api/message/fix', MessageController.saveMessage);
 
