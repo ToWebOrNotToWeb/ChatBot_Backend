@@ -1,6 +1,6 @@
 # Backend & API REST for the ChatBot
 
-Côter serveur du chat bot. Utilise une Mongodb comme base de donner pour les utilisateurs et leur historiques de conversations. Llamaindex est utiliser pour rechercher des infos dans les inputs des utilisateurs et enclencher l'API de l'international monetary fund (IMF) afin d'avoir des chiffres pertinent. ChromaDB et Llamaindex sont utiliser pour l'embedding des datas et les stockers.
+ChatBot spécialiser en e-export / e-commerce. Framework : Node.js; Database : MongoDB; Vector Base : Pinecone; LLM : gpt4o; 
 
 # Installation
 
@@ -406,12 +406,10 @@ Erreur:
 
 <ul>
     <li>"bcrypt": "^5.1.1"</li>
-    <li>"chromadb": "^1.8.1"</li>
     <li>"cors": "^2.8.5"</li>
     <li>"dotenv": "^16.4.5"</li>
     <li>"express": "^4.19.2"</li>
     <li>"fs": "^0.0.1-security"</li>
-    <li>"http": "^0.0.1-security"</li>
     <li>"image-to-base64": "^2.2.0"</li>
     <li>"jsonwebtoken": "^9.0.2"</li>
     <li>"llama": "^2.1.13"</li>
