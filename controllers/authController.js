@@ -1,6 +1,8 @@
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
 import { generateJwtToken } from '../utils/jwt.js';
-import { collectionUser } from '../databases/mongoDb.js';
+import { collectionUser, collectionPicture } from '../databases/mongoDb.js';
+import { imageToBase64 } from '../utils/base64.js';
+import { ObjectId } from 'mongodb';
 
 class AuthController {
 
@@ -57,7 +59,17 @@ class AuthController {
             try {
       
               await collectionUser.insertOne({ name, email, hashedPassword, token, admin: false });
-              res.status(200).json({ 'token': token });
+
+              let profilePictureUrl = './img/defaultProfilePicture.png';
+              let extention = 'png';
+              let imgBase64 = await imageToBase64(profilePictureUrl);
+
+              await collectionUser.findOne({ token: token })
+              .then((user) => {
+                  collectionPicture.insertOne({ userId: new ObjectId(user._id), imgBase64, extention });
+                  res.status(200).json({ 'token': token });
+              });
+              
       
             } catch (error) {
       
